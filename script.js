@@ -1027,9 +1027,9 @@ async function update() {
     while(true) {
         await frame();
         try{
-        // ctx.fillStyle = "#000a"
+        ctx.fillStyle = "#000";
         // ctx.shadowBlur = 0;
-        ctx.clearRect(0, 0, game.width, game.height);
+        ctx.fillRect(0, 0, game.width, game.height);
         var i = 0;
         bosses.forEach(blob => {
             var l = 5;
