@@ -969,7 +969,7 @@ var level;
 function restart() {
     main = new Player;
     enemies = [main];
-    level -= 1;
+    if(level) level -= 1;
     // for(let i = 0; i < 10; i++) {
     //     let a = new Chaser();
     //     a.spawn();
