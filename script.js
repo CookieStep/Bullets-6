@@ -1,5 +1,5 @@
 var canvas = document.createElement("canvas"),
-    ctx = canvas.getContext("2d", {alpha: false});
+    ctx = canvas.getContext("2d");
 
 var {
     cos, sin,
