@@ -32,7 +32,7 @@ var dist = (x, y) => ((x ** 2) + (y ** 2)) ** .5;
 const env = {
     SOLOLEARN: Symbol()
 };
-const Enviroment = env.SOLOLEARN;
+const Enviroment = undefined;
 
 CanvasRenderingContext2D.prototype.zoom = function(x, y, l=1, w=1, r, h, k) {
     if(r != undefined) {
