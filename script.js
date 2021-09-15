@@ -1182,8 +1182,8 @@ function restart() {
     main = new Player;
     enemies = [main];
     enemies.push(new Xp);
-    // if(level) level -= 1;
-    level = 9;
+    if(level) level -= 1;
+//     level = 9;
     // for(let i = 0; i < 10; i++) {
     //     let a = new Chaser();
     //     a.spawn();
