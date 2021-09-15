@@ -30,9 +30,10 @@ var PI2 = PI * 2;
 var dist = (x, y) => ((x ** 2) + (y ** 2)) ** .5;
 
 const env = {
-    SOLOLEARN: Symbol()
+    SOLOLEARN: Symbol(),
+    GITHUB: Symbol()
 };
-const Enviroment = undefined;
+const Enviroment = env.GITHUB;
 
 CanvasRenderingContext2D.prototype.zoom = function(x, y, l=1, w=1, r, h, k) {
     if(r != undefined) {
@@ -566,7 +567,7 @@ class Player extends Entity{
     shoot(rad) {
         if(!this.lastShot) {
             enemies.push(new Bullet(this, rad));
-            this.lastShot = 20;
+            this.lastShot = 10;
         }
     }
     atk = 1;
@@ -779,7 +780,7 @@ class Bullet extends Mover{
         super(rad);
         this.parent = parent;
         Bullet.position(this, rad);
-        this.time = 100;
+        this.time = 25;
         this.team = parent.team + TEAM.BULLET;
         this.hits = parent.hits;
         this.color = parent.color;
@@ -823,7 +824,7 @@ class Bullet extends Mover{
     }
     explode() {}
     s = .5;
-    m = 3;
+    m = 1;
     friction = 1;
     spd = .6;
     // coll = 0;
@@ -1015,7 +1016,6 @@ class Boss extends Brain{
                 if(this.timer++ % 10 == 0) {
                     var blob = new Mover();
                     Bullet.position(blob, PI, this);
-                    blob.xp = 0;
                     blob.color = this.color;
                     enemies.push(blob);
                 }
@@ -1048,12 +1048,10 @@ class Boss extends Brain{
                 if(++this.timer % v == 0) {
                     var blob = new Mover();
                     var rad = Entity.radian(main, this);
-                    blob.xp = 0;
                     Bullet.position(blob, rad + PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
                     var blob = new Mover();
-                    blob.xp = 0;
                     Bullet.position(blob, rad - PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
@@ -1066,7 +1064,6 @@ class Boss extends Brain{
                         this.rad = rad;
                         if(a % 10 == 0) {
                             var blob = new Chill();
-                            blob.xp = 0;
                             Bullet.position(blob, rad + PI/8, this);
                             blob.color = this.color;
                             blob.color2 = this.color2;
@@ -1093,7 +1090,6 @@ class Boss extends Brain{
                 goal.y = game.h - this.s/2;
                 if(this.timer++ % 10 == 0) {
                     var blob = new Mover();
-                    blob.xp = 0;
                     Bullet.position(blob, 0, this);
                     blob.color = this.color;
                     enemies.push(blob);
@@ -1108,13 +1104,11 @@ class Boss extends Brain{
                 this.smartMove();
                 if(++this.timer % v == 0) {
                     var blob = new Mover();
-                    blob.xp = 0;
                     var rad = Entity.radian(main, this);
                     Bullet.position(blob, rad + PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
                     var blob = new Mover();
-                    blob.xp = 0;
                     Bullet.position(blob, rad - PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
@@ -1127,7 +1121,6 @@ class Boss extends Brain{
                         this.rad = rad;
                         if(a % 10 == 0) {
                             var blob = new Chill();
-                            blob.xp = 0;
                             Bullet.position(blob, rad + PI/8, this);
                             blob.color = this.color;
                             blob.color2 = this.color2;
@@ -1190,7 +1183,7 @@ function restart() {
     main = new Player;
     enemies = [main];
     enemies.push(new Xp);
-    if(level) level -= 1;
+    if(level) level = 4;
     // level = 9;
     // for(let i = 0; i < 10; i++) {
     //     let a = new Chaser();
@@ -1235,7 +1228,7 @@ onfocus = () => {
 };
 var whenFocus = () => {};
 var level = 0;
-const ms = 20;
+const ms = 1000/40;
 var frame = () => new Promise(resolve => {
     setTimeout(() => {
         if(gone) {
