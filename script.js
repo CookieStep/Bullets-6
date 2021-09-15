@@ -567,7 +567,7 @@ class Player extends Entity{
     shoot(rad) {
         if(!this.lastShot) {
             enemies.push(new Bullet(this, rad));
-            this.lastShot = 10;
+            this.lastShot = 15;
         }
     }
     atk = 1;
