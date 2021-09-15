@@ -316,8 +316,8 @@ class Entity{
         var am = a.m;
         var bm = b.m;
 
-		am = sqrt(am);
-		bm = sqrt(bm);
+		// am = sqrt(am);
+		// bm = sqrt(bm);
 
 		// var hrad = this.radian(b, a);
 
@@ -366,23 +366,29 @@ class Entity{
 		var avf = dist(a.vx, a.vy);
 		var bvf = dist(b.vx, b.vy);
 
-		var aforce = amf * avf;
-		var bforce = bmf * bvf;
-
-		var ab = am/bm;
-		var ba = bm/am;
-
+		// var ab = am/bm;
+		// var ba = bm/am;
 		var tm = am + bm;
-		var abm = am/tm;
-		var bam = bm/tm;
 
-		bms = bms + (1 - bms) * (bam - 1);
-		ams = ams + (1 - ams) * (abm - 1);
+		var aforce = ((2 * am)/(am + bm)) * avf;
+		var bforce = ((2 * bm)/(am + bm)) * bvf;
 
-		b.vx = b.vx * bms - cos(hrad) * aforce * ab;
-		b.vy = b.vy * bms - sin(hrad) * aforce * ab;
-		a.vx = a.vx * ams - cos(hrad) * bforce * ba;
-		a.vy = a.vy * ams - sin(hrad) * bforce * ba;
+		var abm = (am - bm)/tm;
+		var bam = (bm - am)/tm;
+
+        // var v1i = dist(a.vx, a.vy);
+        // var v2i = dist(a.vx, a.vy);
+
+        // a.vx = ((m1 - m2)/(m1 + m2)) * v1i + ((2 * m2)/(m1 + m2)) * v2i;
+        // b.vx = ((2 * m1)/(m1 + m2)) * v1i + ((m2 - m1)/(m1 + m2)) * v2i;
+
+		// bms = bms + (1 - bms) * (bam - 1);
+		// ams = ams + (1 - ams) * (abm - 1);
+
+		b.vx = b.vx * bam + cos(hrad) * aforce;
+		b.vy = b.vy * bam + sin(hrad) * aforce;
+		a.vx = a.vx * abm - cos(hrad) * bforce;
+		a.vy = a.vy * abm - sin(hrad) * bforce;
     };
     /**@param {Entity} a @param {Entity} b*/
 	static radian = (a, b) => {
@@ -636,6 +642,7 @@ class Mover extends Enemy{
     constructor(r) {
         super();
         this.r = r ?? random(PI2);
+        if(expert) this.spd *= 1.5;
     }
     tick() {
         this.move(this.r);
@@ -662,6 +669,10 @@ class Walker extends Mover{
     shape = shapes.get("square.4");
     color2 = "#aa0";
     spd = .05;
+    constructor() {
+        super();
+        if(expert) this.spd *= 1.5;
+    }
 }
 class Bullet extends Mover{
     constructor(parent, rad) {
@@ -735,7 +746,15 @@ class Chaser extends Brain{
 }
 class Chill extends Enemy{
     tick() {
-        this.r = atan(this.vy, this.vx);
+        if(expert) {
+            var l = .3;
+            this.r = atan(this.vy, this.vx);
+            if(this.force || Entity.distance(this, main) < 10) {
+                var m = 1 - Entity.distance(this, main)/(this.force? 25: 10);
+                if(this.force && m < l) m = l;
+                this.moveTo(main, m);
+            }
+        }
     }
     color = "#0f0";
     shape = shapes.get("square.4");
@@ -748,6 +767,7 @@ class MiniBoss extends Mover{
     hits = TEAM.GOOD;
     coll = 0;
     s = 1.5;
+    m = 1;
     hp  = 10;
     xHp = 10;
     phase = 0;
@@ -755,7 +775,7 @@ class MiniBoss extends Mover{
         var m = this.hp/this.xHp;
         switch(this.phase) {
             case 0:
-                this.spd = .075;
+                this.spd = expert? .1: .075;
                 this.moveTo(main);
                 this.r = atan(this.vy, this.vx);
                 if(Entity.distance(this, main) < 5) {
@@ -766,10 +786,10 @@ class MiniBoss extends Mover{
             case 1:
                 ++this.flash;
                 this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
-                if(this.flash < 40) {
+                if(expert || this.flash < 40) {
                     this.r = Entity.radian(main, this);
                 }
-                if(this.flash >= 50) {
+                if(this.flash >= (expert? 35: 50)) {
                     this.phase = 2;
                     this.spd = 0.6;
                     this.timer = 0;
@@ -777,10 +797,12 @@ class MiniBoss extends Mover{
             break;
             case 2:
                 this.timer++;
-                var b = 7.5;
-                var c = 10 * m;
+                var b = 7;
+                var c = expert? 0: (10 * m);
                 if(this.timer < b) {
-                    this.move(this.r);
+                    if(expert) this.moveTo(main);
+                    else this.move(this.r);
+                    // this.move(this.r);
                 }else if(this.timer < b + c) {
                     var a = this.timer - b;
                     this.color = `hsl(0, ${a * 2}%, 50%)`;
@@ -805,12 +827,50 @@ class Boss extends Brain{
     hp = 20;
     s = 2;
     r = 0;
+    m = 3;
     ro = PI/2;
     goal = new Point;
-    toGoal() {
+    constructor() {
+        super();
+        if(expert) this.spd *= 1.5;
+    }
+    smartMove() {
+        this.rad += (srand() - .5)/4;
+        this.brainPoints.push([this.rad, this.wander]);
+        var lx = this.x + this.s;
+        var ly = this.y + this.s;
+
+        var d = 10;
+        var p = 5;
+
+        if(this.x < d) {
+            var n = (this.x - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI, -n]);
+        }
+        if(lx > game.w - d) {
+            var dis = game.w - lx;
+            var n = (dis - d)/-d;
+            n **= p;
+            this.brainPoints.push([0, -n]);
+        }
+        if(this.y < d) {
+            var n = (this.y - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI * 3/2, -n]);
+        }
+        if(ly > game.h - d) {
+            var dis = game.h - ly;
+            var n = (dis - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI/2, -n]);
+        }
+        this.brainMove();
+    }
+    toGoal(mult) {
         var {goal} = this;
         if(Entity.distance(this, goal) > 1) {
-            this.moveTo(goal);
+            this.moveTo(goal, mult);
         }else return 1;
     }
     register(enemy) {
@@ -820,7 +880,9 @@ class Boss extends Brain{
         if(dis < d) {
             var n = (dis - d)/-d;
             var rad = Entity.radian(this, enemy);
-            n **= 2;
+            n **= .5;
+            // if(expert) this.brainPoints.push([rad, n * 2]); 
+            // else this.brainPoints.push([rad + PI, -n]);
             this.brainPoints.push([rad + PI, -n]);
         }
     }
@@ -849,9 +911,10 @@ class Boss extends Brain{
                 if(this.timer++ % 10 == 0) {
                     var blob = new Mover();
                     Bullet.position(blob, PI, this);
+                    blob.color = this.color;
                     enemies.push(blob);
                 }
-                if(this.toGoal()) {
+                if(this.toGoal(expert? .4: 1)) {
                     this.phase = 2;
                     this.timer = 0;
                 }
@@ -868,24 +931,44 @@ class Boss extends Brain{
             //     }
             // break;
             case 2:
-                super.tick();
-                if(this.timer++ > 300) {
+                this.smartMove();
+                if(this.timer++ > 300 || expert) {
                     this.phase = 3;
                     this.timer = 0;
                 }
             break;
             case 3:
-                super.tick();
-                if(++this.timer % 150 == 0) {
+                var v = expert? 225: 150;
+                this.smartMove();
+                if(++this.timer % v == 0) {
                     var blob = new Mover();
                     var rad = Entity.radian(main, this);
                     Bullet.position(blob, rad + PI/8, this);
+                    blob.color = this.color;
                     enemies.push(blob);
                     var blob = new Mover();
                     Bullet.position(blob, rad - PI/8, this);
+                    blob.color = this.color;
                     enemies.push(blob);
                 }
-                if(this.timer >= 150 * 5) {
+                if(expert) {
+                    var a = this.timer % (v * 2);
+                    if(a > (v * 2) - 50) {
+                        // this.moveTo(main, .5);
+                        var rad = Entity.radian(main, this);
+                        this.rad = rad;
+                        if(a % 10 == 0) {
+                            var blob = new Chill();
+                            Bullet.position(blob, rad + PI/8, this);
+                            blob.color = this.color;
+                            blob.color2 = this.color2;
+                            blob.force = true;
+                            blob.spd *= 1.2;
+                            enemies.push(blob);
+                        }
+                    }
+                }
+                if(this.timer >= v * 5) {
                     this.phase = 4;
                 }
             break;
@@ -903,22 +986,46 @@ class Boss extends Brain{
                 if(this.timer++ % 10 == 0) {
                     var blob = new Mover();
                     Bullet.position(blob, 0, this);
+                    blob.color = this.color;
                     enemies.push(blob);
                 }
-                if(this.toGoal()) {
+                if(this.toGoal(expert? .4: 1)) {
                     this.phase = 6;
                     this.timer = 0;
                 }
             break;
             case 6:
-                super.tick();
-                if(++this.timer % 150 == 0) {
+                var v = expert? 225: 150;
+                this.smartMove();
+                if(++this.timer % v == 0) {
                     var blob = new Mover();
                     var rad = Entity.radian(main, this);
-                    Bullet.position(blob, rad, this);
+                    Bullet.position(blob, rad + PI/8, this);
+                    blob.color = this.color;
+                    enemies.push(blob);
+                    var blob = new Mover();
+                    Bullet.position(blob, rad - PI/8, this);
+                    blob.color = this.color;
                     enemies.push(blob);
                 }
-                if(this.timer >= 150 * 5) {
+                if(expert) {
+                    var a = this.timer % (v * 2);
+                    if(a > (v * 2) - 50) {
+                        // this.moveTo(main, .5);
+                        var rad = Entity.radian(main, this);
+                        this.rad = rad;
+                        if(a % 10 == 0) {
+                            var blob = new Chill();
+                            Bullet.position(blob, rad + PI/8, this);
+                            blob.color = this.color;
+                            blob.color2 = this.color2;
+                            blob.force = true;
+                            blob.spd *= 1.2;
+                            enemies.push(blob);
+                        }
+                    }
+                }
+                if(this.timer >= v * 5) {
                     this.phase = 0;
                 }
             break;
@@ -965,11 +1072,12 @@ onload = () => {
     }catch(err) {console.error(err); console.log(enemies)}
     update();
 };
-var level;
+var level, expert;
 function restart() {
     main = new Player;
     enemies = [main];
     if(level) level -= 1;
+    // level = 9;
     // for(let i = 0; i < 10; i++) {
     //     let a = new Chaser();
     //     a.spawn();
@@ -1074,7 +1182,7 @@ async function update() {
         if(level == 5) txt = "MiniBoss";
         if(level == 10) txt = "Boss 1";
         ctx.font = `${scale}px Arial`;
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = expert? "#f0d": "#fff";
         ctx.fillText(txt, 0, scale - 5);
         enemies = enemies.filter(blob => {
             if(blob.dead < DEAD) return true;
@@ -1084,6 +1192,12 @@ async function update() {
         if(keys.get("Space") == 1) {
             restart();
             keys.set("Space", 2);
+        }
+        if(keys.get("Backspace") == 1) {
+            expert = !expert;
+            level = 0;
+            restart();
+            keys.set("Backspace", 2);
         }
         if(enemies.filter(blob => blob.team & TEAM.BAD).length == 0) {
             nextLevel();
