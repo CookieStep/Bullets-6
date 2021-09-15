@@ -154,7 +154,15 @@ class Entity{
         this.ox = this.x;
         this.oy = this.y;
     }
-    explode() {}
+    explode() {
+        var a = this.xp;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            Xp.position(blob, i * PI2/a + o, this);
+            enemies.push(blob);
+        }
+    }
     dead = 0;
     update() {
         var {friction} = this;
@@ -424,6 +432,85 @@ class Entity{
     xHp = 1;
     atk = 1;
 }
+class Xp extends Entity{
+    static position(what, rad, parent) {
+        if(!parent) parent = what.parent;
+        // var s = what.s * .5;
+        var ps = parent.s;
+        what.r = rad;
+        // var c = cos(rad), s = sin(rad);
+
+        // var h = Math.min(abs(1 / c), abs(1 / s));
+
+        // c *= h; s *= h;
+
+        what.x = parent.x + ps/2 - what.s/2;
+        what.y = parent.y + ps/2 - what.s/2;
+    }
+    s = .2;
+    life = 0;
+    moveTo2(enemy, mult) {
+        var obj = {...this};
+        obj.x += obj.vx * 5;
+        obj.y += obj.vy * 5;
+        this.move(Entity.radian(enemy, obj), mult);
+    }
+    explode() {};
+    spd = 0.05;
+    tick() {
+        if(++this.life < 7) {
+            this.friction = 1;
+            this.move(this.r);
+        }else if(++this.life < 20) {
+            this.friction = 0.8;
+        }else if(!main.dead) {
+            this.friction = 0.99;
+            this.spd = 0.05;
+            this.moveTo2(main);
+            if(Entity.isTouching(main, this)) {
+                this.dead = DEAD;
+                ++main.xp;
+                ++score;
+            }
+        }
+        this.hue += 10;
+    }
+    constructor() {
+        super();
+        this.hue = random(360);
+    }
+    draw() {
+        var {x, y, ox, oy, vx, vy} = this;
+        var mx = abs(x - ox);
+        var my = abs(y - oy);
+        var s = this.s/2;
+        x += s; y += s;
+        ox += s; oy += s;
+        x *= scale; y *= scale;
+        ox *= scale; oy *= scale;
+        vx *= scale * -2; vy *= scale * -2;
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+
+        ctx.quadraticCurveTo(x + vx, y + vy, x, y);
+
+        ctx.lineWidth = s * scale * 1.8;
+        if(!y) return;
+        if(!x) return;
+        if(!ox) return;
+        if(!oy) return;
+        var color = ctx.createLinearGradient(x, y, ox, oy);
+        this.color = `hsl(${this.hue}, 100%, 50%)`;
+        color.addColorStop(0, this.color);
+        color.addColorStop(1, `hsla(${this.hue - 10}, 100%, 50%, .2)`);
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        this.draw1();
+    }
+    color = "#f00";
+    shape = shapes.get("square.4");
+}
 function Point(x, y) {
     this.x = x;
     this.y = y;
@@ -435,6 +522,17 @@ class Player extends Entity{
         this.x = (game.w - this.s)/2;
         this.y = (game.h - this.s)/2;
     }
+    explode() {
+        var a = this.xp/10;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            blob.spd = random()/15;
+            Xp.position(blob, i * PI2/a + o, this);
+            enemies.push(blob);
+        }
+    }
+    xp = 0;
     tick() {
         var mx = 0;
         var my = 0;
@@ -505,8 +603,8 @@ class Enemy extends Entity{
         }
         return this;
     }
-    xHp = .5;
-    hp  = .5;
+    xHp = 1;
+    hp  = 1;
     team = TEAM.BAD + TEAM.ENEMY;
     hits = TEAM.GOOD;
     coll = TEAM.ENEMY;
@@ -663,6 +761,7 @@ class Mover extends Enemy{
         ctx.resetTransform();
         ctx.restore();
     }
+    xp = 7;
 }
 class Walker extends Mover{
     color = "#ffa";
@@ -673,6 +772,7 @@ class Walker extends Mover{
         super();
         if(expert) this.spd *= 1.5;
     }
+    xp = 5;
 }
 class Bullet extends Mover{
     constructor(parent, rad) {
@@ -721,6 +821,7 @@ class Bullet extends Mover{
             this.hp = 0;
         }
     }
+    explode() {}
     s = .5;
     m = 3;
     friction = 1;
@@ -761,6 +862,7 @@ class Chill extends Enemy{
     color2 = "#ff0";
     shape2 = shapes.get("pause");
     hp = 1;
+    xp = 3;
 }
 class MiniBoss extends Mover{
     team = TEAM.BOSS + TEAM.BAD;
@@ -818,6 +920,7 @@ class MiniBoss extends Mover{
     color = "#f00";
     shape2 = shapes.get("arrow-box");
     color2 = "#fff";
+    xp = 15;
 }
 class Boss extends Brain{
     team = TEAM.BOSS + TEAM.BAD;
@@ -828,6 +931,7 @@ class Boss extends Brain{
     s = 2;
     r = 0;
     m = 3;
+    xp = 30;
     ro = PI/2;
     goal = new Point;
     constructor() {
@@ -911,6 +1015,7 @@ class Boss extends Brain{
                 if(this.timer++ % 10 == 0) {
                     var blob = new Mover();
                     Bullet.position(blob, PI, this);
+                    blob.xp = 0;
                     blob.color = this.color;
                     enemies.push(blob);
                 }
@@ -943,10 +1048,12 @@ class Boss extends Brain{
                 if(++this.timer % v == 0) {
                     var blob = new Mover();
                     var rad = Entity.radian(main, this);
+                    blob.xp = 0;
                     Bullet.position(blob, rad + PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
                     var blob = new Mover();
+                    blob.xp = 0;
                     Bullet.position(blob, rad - PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
@@ -959,6 +1066,7 @@ class Boss extends Brain{
                         this.rad = rad;
                         if(a % 10 == 0) {
                             var blob = new Chill();
+                            blob.xp = 0;
                             Bullet.position(blob, rad + PI/8, this);
                             blob.color = this.color;
                             blob.color2 = this.color2;
@@ -985,6 +1093,7 @@ class Boss extends Brain{
                 goal.y = game.h - this.s/2;
                 if(this.timer++ % 10 == 0) {
                     var blob = new Mover();
+                    blob.xp = 0;
                     Bullet.position(blob, 0, this);
                     blob.color = this.color;
                     enemies.push(blob);
@@ -999,11 +1108,13 @@ class Boss extends Brain{
                 this.smartMove();
                 if(++this.timer % v == 0) {
                     var blob = new Mover();
+                    blob.xp = 0;
                     var rad = Entity.radian(main, this);
                     Bullet.position(blob, rad + PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
                     var blob = new Mover();
+                    blob.xp = 0;
                     Bullet.position(blob, rad - PI/8, this);
                     blob.color = this.color;
                     enemies.push(blob);
@@ -1016,6 +1127,7 @@ class Boss extends Brain{
                         this.rad = rad;
                         if(a % 10 == 0) {
                             var blob = new Chill();
+                            blob.xp = 0;
                             Bullet.position(blob, rad + PI/8, this);
                             blob.color = this.color;
                             blob.color2 = this.color2;
@@ -1072,10 +1184,12 @@ onload = () => {
     }catch(err) {console.error(err); console.log(enemies)}
     update();
 };
-var level, expert;
+var level, expert, score;
 function restart() {
+    score = 0;
     main = new Player;
     enemies = [main];
+    enemies.push(new Xp);
     if(level) level -= 1;
     // level = 9;
     // for(let i = 0; i < 10; i++) {
@@ -1184,22 +1298,29 @@ async function update() {
         ctx.font = `${scale}px Arial`;
         ctx.fillStyle = expert? "#f0d": "#fff";
         ctx.fillText(txt, 0, scale - 5);
+        var txt = `Score: ${score}`;
+        ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale - 5);
+
+        let a = [];
         enemies = enemies.filter(blob => {
             if(blob.dead < DEAD) return true;
-            else blob.explode();
+            else a.push(blob);
         });
+        a.forEach(blob => blob.explode());
 
         if(keys.get("Space") == 1) {
             restart();
             keys.set("Space", 2);
         }
+
         if(keys.get("Backspace") == 1) {
-            expert = !expert;
             level = 0;
+            expert = !expert;
             restart();
             keys.set("Backspace", 2);
         }
-        if(enemies.filter(blob => blob.team & TEAM.BAD).length == 0) {
+        
+        if(!main.dead && enemies.filter(blob => blob.team & TEAM.BAD).length == 0) {
             nextLevel();
         }
         }catch(err) {
