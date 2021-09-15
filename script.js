@@ -30,10 +30,9 @@ var PI2 = PI * 2;
 var dist = (x, y) => ((x ** 2) + (y ** 2)) ** .5;
 
 const env = {
-    SOLOLEARN: Symbol(),
-    GITHUB: Symbol()
+    SOLOLEARN: Symbol()
 };
-const Enviroment = env.GITHUB;
+const Enviroment = 0;
 
 CanvasRenderingContext2D.prototype.zoom = function(x, y, l=1, w=1, r, h, k) {
     if(r != undefined) {
@@ -824,7 +823,7 @@ class Bullet extends Mover{
     }
     explode() {}
     s = .5;
-    m = 1;
+    m = 3;
     friction = 1;
     spd = .6;
     // coll = 0;
@@ -848,7 +847,7 @@ class Chaser extends Brain{
 }
 class Chill extends Enemy{
     tick() {
-        if(expert) {
+        if(expert && !main.dead) {
             var l = .3;
             this.r = atan(this.vy, this.vx);
             if(this.force || Entity.distance(this, main) < 10) {
@@ -889,10 +888,10 @@ class MiniBoss extends Mover{
             case 1:
                 ++this.flash;
                 this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
-                if(expert || this.flash < 40) {
+                if(expert || this.flash < 30) {
                     this.r = Entity.radian(main, this);
                 }
-                if(this.flash >= (expert? 35: 50)) {
+                if(this.flash >= (expert? 35: 40)) {
                     this.phase = 2;
                     this.spd = 0.6;
                     this.timer = 0;
@@ -1037,13 +1036,13 @@ class Boss extends Brain{
             // break;
             case 2:
                 this.smartMove();
-                if(this.timer++ > 300 || expert) {
+                if(this.timer++ > (expert? 100: 200)) {
                     this.phase = 3;
                     this.timer = 0;
                 }
             break;
             case 3:
-                var v = expert? 225: 150;
+                var v = expert? 225: 100;
                 this.smartMove();
                 if(++this.timer % v == 0) {
                     var blob = new Mover();
@@ -1183,8 +1182,8 @@ function restart() {
     main = new Player;
     enemies = [main];
     enemies.push(new Xp);
-    if(level) level -= 1;
-    // level = 9;
+    // if(level) level -= 1;
+    level = 9;
     // for(let i = 0; i < 10; i++) {
     //     let a = new Chaser();
     //     a.spawn();
