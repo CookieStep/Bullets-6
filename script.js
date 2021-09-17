@@ -1602,6 +1602,7 @@ class TheSummoner extends Player{
         summon.team = TEAM.GOOD;
         summon.hits = TEAM.BAD;
         summon.coll = TEAM.BAD + TEAM.GOOD;
+        summon.hp = .5;
         return summon;
     }
     tick() {
@@ -1646,10 +1647,10 @@ class TheSummoner extends Player{
         }
     }
     draw() {
+        super.draw();
         for(let pet of this.pets) {
             pet.draw();
         }
-        super.draw();
     }
     ability(key) {
         if(key == 1) {
@@ -1670,6 +1671,7 @@ class TheSummoner extends Player{
     }
     explode() {
         for(let pet of this.pets) {
+            pet.hp = 1;
             enemies.push(pet);
         }
     }
@@ -1681,6 +1683,7 @@ class TheSummoner extends Player{
             enemies.push(blob);
             this.alive.push(blob);
             blob.inv.set(this, 10);
+            blob.hp = 1;
             this.p -= 5;
             this.lastShot = 15;
         }
@@ -1689,11 +1692,11 @@ class TheSummoner extends Player{
         for(let blob of this.alive) {
             blob.dead = DEAD;
         }
-        this.p = 10;
+        this.p = 20;
     }
+    p = 0;
     color = "#d82";
     color2 = "#555";
-    p = 10;
     shape = shapes.get("bullet");
     shape2 = shapes.get("square.4");
     selected = 0;
@@ -1719,9 +1722,13 @@ class Tracker extends Chill{
         var obj = {...this};
         obj.x += obj.vx * 3;
         obj.y += obj.vy * 3;
-        this.move(Entity.radian(enemy, obj), mult);
+        var obj2 = {...enemy};
+        obj2.x += obj2.vx * 4;
+        obj2.y += obj2.vy * 4;
+        if(!obj2.x) obj2 = enemy;
+        this.move(Entity.radian(obj2, obj), mult);
     }
-    friction = 0.9;
+    friction = 0.99;
     color = "#0f0";
     shape = shapes.get("square.4");
     color2 = "#ff0";
@@ -1734,7 +1741,6 @@ class TheMagician extends TheSummoner{
     color = "#5f5";
     color2 = "#cfc";
     rec = 0.15;
-    p = 15;
     shape2 = shapes.get("tophat");
     draw2() {
         var {x, y, s, r, alpha, shape2} = this;
@@ -1763,12 +1769,13 @@ class TheMagician extends TheSummoner{
         var blob = super.summon();
         blob.team += TEAM.BULLET;
         blob.coll = this.coll;
+        blob.hp = .1;
         return blob;
     }
     onXp() {}
     nextLevel() {
         super.nextLevel();
-        this.p = 20;
+        this.p = 0;
     }
     register(what) {
         for(let pet of this.pets) {
@@ -1786,6 +1793,7 @@ class TheMagician extends TheSummoner{
             var a = (blob.spd * 15);
             blob.vx = cos(rad) * a;
             blob.vy = sin(rad) * a;
+            blob.hp = 1;
             this.p -= 5;
             this.lastShot = 15;
         }
@@ -1795,9 +1803,11 @@ class TheMagician extends TheSummoner{
             this.alive.push(pet);
             enemies.push(pet);
             this.p -= 5;
+            pet.hp = 1;
         }
         this.pets = [];
     }
+    p = 0;
 }
 var main;
 var bosses = new Set;
@@ -1914,7 +1924,7 @@ onload = () => {
         if(keys.get("Space") == 1) {
             keys.set("Space", 2);
             mainMenu.active = false;
-            level = selLvl;
+            level = selLvl + 1;
             restart();
         }
     }
@@ -1927,7 +1937,16 @@ onload = () => {
         mainMenu.active = true;
         if(expert) lvlMax = saveData.levelE;
         else lvlMax = saveData.level;
-        players = [new TheGunner, new TheDasher, new TheSummoner, new TheMagician];
+        players = [new TheGunner];
+        if(saveData.level >= 5) {
+            players.push(new TheDasher);
+        }
+        if(saveData.level >= 10) {
+            players.push(new TheSummoner);
+        }
+        if(saveData.levelE >= 10) {
+            players.push(new TheMagician);
+        }
     };
 }
 
@@ -2088,13 +2107,12 @@ async function update() {
 }
 function nextLevel() {
     if(expert) {
-        if(level > saveData.levelE) {
+        if(level > saveData.levelE || !saveData.levelE) {
             saveData.levelE = level;
         }
-    }else{
-        if(level > saveData.level) {
-            saveData.level = level;
-        }
+    }
+    if(level > saveData.level || !saveData.level) {
+        saveData.level = level;
     }
     saveData.save();
     switch(++level) {
