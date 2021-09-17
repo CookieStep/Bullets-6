@@ -6,7 +6,8 @@ var {
     atan2: atan,
     abs, sqrt,
     PI, floor,
-    round, sign
+    round, sign,
+    ceil
 } = Math;
 
 var loop = (value, max) => (value % max + max) % max;
@@ -32,7 +33,7 @@ var dist = (x, y) => ((x ** 2) + (y ** 2)) ** .5;
 const env = {
     SOLOLEARN: Symbol()
 };
-const Enviroment = 0;
+const Enviroment = undefined;
 
 CanvasRenderingContext2D.prototype.zoom = function(x, y, l=1, w=1, r, h, k) {
     if(r != undefined) {
@@ -145,7 +146,19 @@ var DEAD = 10;
 		path.lineTo(1 - r, 0);
 		path.quadraticCurveTo(1, 0, 1, 1);
 		path.closePath();
-    }))
+    }));
+    shapes.set("square-ring", new Path(ctx => {
+        var w = 0.2;
+        var a = 1-w;
+        ctx.rect(0, 0, 1, w);
+        ctx.rect(0, 0, w, 1);
+        ctx.rect(0, a, 1, w);
+        ctx.rect(a, 0, w, 1);
+    }));
+	shapes.set("tophat", new Path(path => {
+		path.rect(-0.2, -0.2, 1.4, 0.2);
+		path.rect(0, -0.8, 1, 0.6);
+	}));
 }
 class Entity{
     constructor() {
@@ -201,10 +214,15 @@ class Entity{
         this.draw2.call(obj);
     }
     draw1() {
-        var {x, y, s, r, alpha} = this;
+        var {x, y, s, r, ro, alpha} = this;
         x *= scale;
         y *= scale;
         s *= scale;
+
+        if(!r) r = 0;
+        if(!ro) ro = 0;
+
+        r += ro;
 
         ctx.save();
         ctx.zoom(x, y, s, s, r);
@@ -215,7 +233,7 @@ class Entity{
         ctx.restore();
     }
     draw2() {
-        var {x, y, s, r, alpha, shape2} = this;
+        var {x, y, s, r, alpha, ro, shape2} = this;
         if(!shape2) return;
         x *= scale;
         y *= scale;
@@ -223,6 +241,11 @@ class Entity{
 
         x += s * .5;
         y += s * .5;
+
+        if(!r) r = 0;
+        if(!ro) ro = 0;
+
+        r += ro;
 
         ctx.save();
         ctx.zoom(x, y, s, s, r);
@@ -233,12 +256,17 @@ class Entity{
         ctx.restore();
     }
     drawo() {
-        var {ox, x, oy, y, s, r, alpha} = this;
+        var {ox, x, oy, y, s, r, ro, alpha} = this;
         x = (ox + x) * .5;
         y = (oy + y) * .5;
         x *= scale;
         y *= scale;
         s *= scale;
+
+        if(!r) r = 0;
+        if(!ro) ro = 0;
+
+        r += ro;
 
         ctx.save();
         ctx.zoom(x, y, s, s, r);
@@ -249,10 +277,15 @@ class Entity{
         ctx.restore();
     }
     drawo2() {
-        var {ox: x, oy: y, s, r, alpha} = this;
+        var {ox: x, oy: y, s, r, ro, alpha} = this;
         x *= scale;
         y *= scale;
         s *= scale;
+
+        if(!r) r = 0;
+        if(!ro) ro = 0;
+
+        r += ro;
 
         ctx.save();
         ctx.zoom(x, y, s, s, r);
@@ -266,10 +299,10 @@ class Entity{
     }
     inv = new Map;
     attacked({enemy, atk}) {
-        // if(!this.inv.has(enemy)) {
+        if(!this.god && !this.inv.has(enemy)) {
             this.inv.set(enemy, 10);
             if(atk) this.hp -= atk;
-        // }
+        }
     }
     screenlock() {
         var {x, y, s, vx, vy} = this;
@@ -431,6 +464,7 @@ class Entity{
     hp = 1;
     xHp = 1;
     atk = 1;
+    ro = 0;
 }
 class Xp extends Entity{
     static position(what, rad, parent) {
@@ -451,8 +485,8 @@ class Xp extends Entity{
     life = 0;
     moveTo2(enemy, mult) {
         var obj = {...this};
-        obj.x += obj.vx * 5;
-        obj.y += obj.vy * 5;
+        obj.x += obj.vx * 3;
+        obj.y += obj.vy * 3;
         this.move(Entity.radian(enemy, obj), mult);
     }
     explode() {};
@@ -470,6 +504,7 @@ class Xp extends Entity{
             if(Entity.isTouching(main, this)) {
                 this.dead = DEAD;
                 ++main.xp;
+                main.onXp();
                 ++score;
             }
         }
@@ -481,8 +516,8 @@ class Xp extends Entity{
     }
     draw() {
         var {x, y, ox, oy, vx, vy} = this;
-        var mx = abs(x - ox);
-        var my = abs(y - oy);
+        // var mx = abs(x - ox);
+        // var my = abs(y - oy);
         var s = this.s/2;
         x += s; y += s;
         ox += s; oy += s;
@@ -500,14 +535,16 @@ class Xp extends Entity{
         if(!ox) return;
         if(!oy) return;
         var color = ctx.createLinearGradient(x, y, ox, oy);
-        this.color = `hsl(${this.hue}, 100%, 50%)`;
+        this.color = this.color2 || `hsl(${this.hue}, ${this.sat}%, ${this.bri}%)`;
         color.addColorStop(0, this.color);
-        color.addColorStop(1, `hsla(${this.hue - 10}, 100%, 50%, .2)`);
+        color.addColorStop(1, this.color3 || `hsla(${this.hue - 10}, ${this.sat}%, ${this.bri}%, .2)`);
         ctx.strokeStyle = color;
         ctx.stroke();
         ctx.globalAlpha = 1;
         this.draw1();
     }
+    sat = 100;
+    bri = 75;
     color = "#f00";
     shape = shapes.get("square.4");
 }
@@ -515,68 +552,6 @@ function Point(x, y) {
     this.x = x;
     this.y = y;
     this.s = 0;
-}
-class Player extends Entity{
-    constructor() {
-        super();
-        this.x = (game.w - this.s)/2;
-        this.y = (game.h - this.s)/2;
-    }
-    explode() {
-        var a = this.xp/10;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            blob.spd = random()/15;
-            Xp.position(blob, i * PI2/a + o, this);
-            enemies.push(blob);
-        }
-    }
-    xp = 0;
-    tick() {
-        var mx = 0;
-        var my = 0;
-        if(keys.has("KeyW")) --my;
-        if(keys.has("KeyS")) ++my;
-        if(keys.has("KeyA")) --mx;
-        if(keys.has("KeyD")) ++mx;
-        if(mx || my) {
-            var rad = atan(my, mx);
-            // this.r = rad;
-            this.move(rad);
-        }
-        mx = 0; my = 0;
-        if(keys.has("ArrowUp"   )) --my;
-        if(keys.has("ArrowDown" )) ++my;
-        if(keys.has("ArrowLeft" )) --mx;
-        if(keys.has("ArrowRight")) ++mx;
-        if(mx || my) {
-            var rad = atan(my, mx);
-            // this.r = rad;
-            this.shoot(rad);
-        }
-        if(this.lastShot) --this.lastShot;
-        this.r = atan(this.vy, this.vx);
-    }
-    hit(what) {
-        if(this.hits & what.team) {
-            what.attacked({enemy: this, atk: this.atk});
-        }
-    }
-    shoot(rad) {
-        if(!this.lastShot) {
-            enemies.push(new Bullet(this, rad));
-            this.lastShot = 15;
-        }
-    }
-    atk = 1;
-    color = "#55f";
-    shape = shapes.get("square.4");
-    color2 = "#aaf";
-    shape2 = shapes.get("square.4");
-    team = TEAM.GOOD;
-    hits = TEAM.BAD;
-    coll = TEAM.BAD;
 }
 class Enemy extends Entity{
     hit(what) {
@@ -846,14 +821,34 @@ class Chaser extends Brain{
     }
 }
 class Chill extends Enemy{
+    constructor() {
+        super();
+        if(expert) {
+            this.shape2 = shapes.get("square-ring");
+        }
+    }
+    register(what) {
+        if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
+        var dis = Entity.distance(this, what);
+        if(!this.player) {
+            this.player = what;
+            this.dis = dis;
+        }else if(dis < this.dis) {
+            this.player = what;
+            this.dis = dis;
+        }
+    }
     tick() {
-        if(expert && !main.dead) {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = main;
+        if(expert && player) {
             var l = .3;
             this.r = atan(this.vy, this.vx);
-            if(this.force || Entity.distance(this, main) < 10) {
-                var m = 1 - Entity.distance(this, main)/(this.force? 25: 10);
+            if(this.force || Entity.distance(this, player) < 10) {
+                var m = 1 - Entity.distance(this, player)/(this.force? 25: 10);
                 if(this.force && m < l) m = l;
-                this.moveTo(main, m);
+                this.moveTo(player, m);
             }
         }
     }
@@ -916,6 +911,17 @@ class MiniBoss extends Mover{
             break;
         }
     }
+    attacked(obj) {
+        super.attacked(obj);
+
+        var a = 5;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            Xp.position(blob, i * PI2/a + o, this);
+            enemies.push(blob);
+        }
+    }
     shape = shapes.get("square.4");
     color = "#f00";
     shape2 = shapes.get("arrow-box");
@@ -930,13 +936,24 @@ class Boss extends Brain{
     hp = 20;
     s = 2;
     r = 0;
-    m = 3;
+    m = 5;
     xp = 30;
-    ro = PI/2;
+    ro = 0;
     goal = new Point;
     constructor() {
         super();
         if(expert) this.spd *= 1.5;
+    }
+    attacked(obj) {
+        super.attacked(obj);
+        
+        var a = 7;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            Xp.position(blob, i * PI2/a + o, this);
+            enemies.push(blob);
+        }
     }
     smartMove() {
         this.rad += (srand() - .5)/4;
@@ -996,6 +1013,8 @@ class Boss extends Brain{
             case 0:
                 goal.x = game.w - this.s/2;
                 goal.y = this.s/2;
+                this.m = 20;
+                this.color2 = "#f00";
                 if(this.toGoal()) {
                     this.phase = 1;
                     this.timer = 0;
@@ -1010,6 +1029,8 @@ class Boss extends Brain{
             //     }
             // break;
             case 1:
+                this.m = 20;
+                this.color2 = "#f00";
                 goal.x = game.w - this.s/2;
                 goal.y = game.h - this.s/2;
                 if(this.timer++ % 10 == 0) {
@@ -1036,6 +1057,8 @@ class Boss extends Brain{
             // break;
             case 2:
                 this.smartMove();
+                this.m = 5;
+                this.color2 = "#f0f";
                 if(this.timer++ > (expert? 100: 200)) {
                     this.phase = 3;
                     this.timer = 0;
@@ -1044,6 +1067,8 @@ class Boss extends Brain{
             case 3:
                 var v = expert? 225: 100;
                 this.smartMove();
+                this.m = 5;
+                this.color2 = "#f0f";
                 if(++this.timer % v == 0) {
                     var blob = new Mover();
                     var rad = Entity.radian(main, this);
@@ -1077,6 +1102,8 @@ class Boss extends Brain{
                 }
             break;
             case 4:
+                this.m = 20;
+                this.color2 = "#f00";
                 goal.x = this.s/2;
                 goal.y = this.s/2;
                 if(this.toGoal()) {
@@ -1085,6 +1112,8 @@ class Boss extends Brain{
                 }
             break;
             case 5:
+                this.m = 20;
+                this.color2 = "#f00";
                 goal.x = this.s/2;
                 goal.y = game.h - this.s/2;
                 if(this.timer++ % 10 == 0) {
@@ -1101,6 +1130,8 @@ class Boss extends Brain{
             case 6:
                 var v = expert? 225: 150;
                 this.smartMove();
+                this.m = 5;
+                this.color2 = "#f0f";
                 if(++this.timer % v == 0) {
                     var blob = new Mover();
                     var rad = Entity.radian(main, this);
@@ -1135,28 +1166,638 @@ class Boss extends Brain{
             break;
         }
     }
-    burstShot(o=0, u) {
-        if(isNaN(u) || u <= 0) u = PI/2;
-        for(let i = 0; i < PI2; i += u) {
-            var blob = new Bullet(this, i + o);
-            blob.coll = 0;
-            blob.time = 10;
-            enemies.push(blob);
-        }
-    }
-    burstShot2(o=0, u) {
-        if(isNaN(u) || u <= 0) u = PI;
-        for(let i = 0; i < PI2; i += u) {
-            var blob = new Mover();
-            Bullet.position(blob, i + o, this);
-            enemies.push(blob);
-        }
-    }
+    // burstShot(o=0, u) {
+    //     if(isNaN(u) || u <= 0) u = PI/2;
+    //     for(let i = 0; i < PI2; i += u) {
+    //         var blob = new Bullet(this, i + o);
+    //         blob.coll = 0;
+    //         blob.time = 10;
+    //         enemies.push(blob);
+    //     }
+    // }
+    // burstShot2(o=0, u) {
+    //     if(isNaN(u) || u <= 0) u = PI;
+    //     for(let i = 0; i < PI2; i += u) {
+    //         var blob = new Mover();
+    //         Bullet.position(blob, i + o, this);
+    //         enemies.push(blob);
+    //     }
+    // }
     phase = 0;
     color = "#ff0";
     color2 = "#f0f";
     shape2 = shapes.get("square.4");
     shape = shapes.get("bullet");
+    static name = "Summoner";
+}
+class Wander extends Walker{
+    ro = PI/2;
+    tick() {
+        this.r += (srand() - .5) * PI/2;
+        super.tick();
+    }
+    shape = shapes.get("bullet");
+    color = "#75a";
+    color2 = "#daf";
+}
+class SpawnDust extends Xp{
+    constructor(parent) {
+        super();
+        this.parent = parent;
+    }
+    tick() {
+        var {parent: main} = this;
+        this.friction = 0.99;
+        this.spd = 0.05;
+        this.moveTo2(main);
+        this.dead = main.dead;
+        if(Entity.distance(main, this) < .1) {
+            this.dead = DEAD;
+            // ++main.xp;
+            // ++score;
+        }
+    }
+    sat = 0;
+    static position(what, rad, dis, parent) {
+        if(!parent) parent = what.parent;
+        // var s = what.s * .5;
+        var ps = what.s;
+        what.r = rad;
+        var c = cos(rad), s = sin(rad);
+
+        // var h = Math.min(abs(1 / c), abs(1 / s));
+
+        // c *= h; s *= h;
+
+        what.x = parent.x + ps/2 - what.s/2 + c * dis;
+        what.y = parent.y + ps/2 - what.s/2 + s * dis;
+    }
+    draw1() {}
+}
+class Spawner extends Point{
+    constructor(boss) {
+        super(boss.x + boss.s/2, boss.y - boss.s/2);
+        this.team = boss.team;
+        this.boss = boss;
+    }
+    s = 0;
+    coll = 0;
+    hits = 0;
+    register() {}
+    attacked() {}
+    hit() {}
+    explode() {}
+    inv = {has() {return true}}
+    time = 0;
+    dead = 0;
+    update() {
+        this.time += 1;
+        if(this.time == 100) {
+            enemies.push(this.boss);
+            bosses.add(this.boss);
+            this.dead = DEAD;
+        }
+        // if(this.time >= 150) {
+        //     this.dead = DEAD;
+        // }
+        if(this.time > 35 && this.time < 75) {
+            var blob = new SpawnDust(this);
+            var rad = random(PI2);
+            var dis = random(7, 5);
+            SpawnDust.position(blob, rad, dis, this);
+            blob.color2 = this.boss.color;
+            blob.color3 = this.boss.color2;
+            enemies.push(blob);
+        }
+    }
+    draw() {
+        var {x, y} = this;
+        x *= scale;
+        y *= scale;
+        ctx.beginPath();
+        if(this.time < 30) {
+            ctx.arc(x, y, scale * (18/5 + (3 - this.time/10) * 10), 0, PI2);
+        }else{
+            var a = abs(this.time % 10 - 5) * 2;
+            ctx.arc(x, y, scale * (10 + a)/5, 0, PI2);
+
+
+            var s = 0.01;
+            var blob = this.boss;
+            var a = (this.time - 30)/70;
+            s = blob.s * a + s * (1 - a);
+            blob.drawWith({x: this.x - s/2, y: this.y - s/2, s, r: 0, alpha: a});
+        }
+        // if(this.time > 75) {
+            // var s = 0.01;
+            // var blob = this.boss;
+            // var a = (this.time - 75)/25;
+            // s = blob.s * a + s * (1 - a);
+            // blob.drawWith({x: this.x - s/2, y: this.y - s/2, s, r: 0, alpha: a});
+        // }
+        ctx.strokeStyle = `rgba(255, 255, 255, ${this.time > 75? 1 - (this.time - 75)/25: 1})`;
+        ctx.stroke();
+    }
+}
+class Turret extends Chill{
+    constructor() {
+        super();
+        this.r = random(PI2);
+    }
+    register(what) {
+        if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
+        var dis = Entity.distance(this, what);
+        if(!this.player) {
+            this.player = what;
+            this.dis = dis;
+        }else if(dis < this.dis) {
+            this.player = what;
+            this.dis = dis;
+        }
+    }
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = main;
+        if(this.lastShot) --this.lastShot;
+        if(Entity.distance(this, player) < (expert? 15: 10)) {
+            var rad = Entity.radian(player, this);
+            var dis = rDis(this.r - PI/2, rad);
+            // this.r = rad + PI/2;
+            if(expert) {
+                var m = PI/32;
+                if(abs(dis) < m) {
+                    this.r = rad + PI/2;
+                    this.shoot(this.r - PI/2);
+                }else this.r += sign(dis) * m;
+            }else{
+                var m = PI/32;
+                if(abs(dis) < m) {
+                    this.r = rad + PI/2;
+                }else this.r += sign(dis) * m;
+                this.shoot(this.r - PI/2);
+            }
+        }
+    }
+    xp = 7;
+    lastShot = 0;
+    shoot(rad) {
+        if(!this.lastShot) {
+            var blob = new Bullet(this, rad);
+            blob.team = TEAM.BULLET;
+            blob.coll = TEAM.BULLET;
+            var m = expert? 2: 3;
+            blob.spd  /= m;
+            blob.time *= m;
+            enemies.push(blob);
+            this.lastShot = 40;
+        }
+    }
+    color = "#555";
+    shape2 = shapes.get("bullet");
+}
+class Bomb extends Chill{
+    color = "#333";
+    shape2 = shapes.get("square.5");
+    color2 = "#d55";
+    xp = 2;
+    tick() {
+        if(this.timer) {
+            ++this.timer;
+            var m = 3;
+            var a = 60 + 40 * abs((this.timer + m) % (m * 2) - m)/m;
+            // var a = 60 + 40 * abs(m - m)/m;
+            this.color2 = `hsl(0, 67%, ${a}%)`;
+            if(this.timer == 4 * m) {
+                this.dead = DEAD;
+            }
+        }
+        if(Entity.distance(this, main) < 5 && !this.timer) {
+            this.timer = 1;
+            if(expert) {
+                this.dead = DEAD;
+                // this.boom = true;
+            }
+        }
+    }
+    explode() {
+        super.explode();
+
+        // if(expert && !this.boom) return;
+
+        var u = PI2/8;
+        for(let i = 0; i < PI2; i += u) {
+            var blob = new Bullet(this, i);
+            blob.hits = TEAM.GOOD + TEAM.BAD;
+            blob.coll = 0;
+            blob.time = 30;
+            blob.spd /= expert? 2: 4;
+            // blob.s *= 2;
+            enemies.push(blob);
+        }
+    }
+}
+class Player extends Entity{
+    constructor() {
+        super();
+        this.x = (game.w - this.s)/2;
+        this.y = (game.h - this.s)/2;
+    }
+    onXp() {}
+    nextLevel() {}
+    explode() {
+        var a = this.xp/10;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            blob.spd = random()/15;
+            Xp.position(blob, i * PI2/a + o, this);
+            enemies.push(blob);
+        }
+    }
+    xp = 0;
+    r = 0;
+    tick() {
+        var mx = 0;
+        var my = 0;
+        if(keys.has("KeyW")) --my;
+        if(keys.has("KeyS")) ++my;
+        if(keys.has("KeyA")) --mx;
+        if(keys.has("KeyD")) ++mx;
+        if(mx || my) {
+            var rad = atan(my, mx);
+            // this.r = rad;
+            this.move(rad);
+            var mrad = rad;
+        }
+        mx = 0; my = 0;
+        if(keys.has("ArrowUp"   )) --my;
+        if(keys.has("ArrowDown" )) ++my;
+        if(keys.has("ArrowLeft" )) --mx;
+        if(keys.has("ArrowRight")) ++mx;
+        if(mx || my) {
+            var rad = atan(my, mx);
+            // this.r = rad;
+            this.skill(rad);
+            var srad = rad;
+        }
+        if(keys.has("ShiftRight")) {
+            this.ability(keys.get("ShiftRight"), mrad, srad);
+            keys.set("ShiftRight", 2);
+        }
+        if(this.lastShot) --this.lastShot;
+        if(this.lastSkill) --this.lastSkill;
+        this.r = atan(this.vy, this.vx);
+        this.tickSkill();
+    }
+    tickSkill() {}
+    skill(rad) {}
+    ability(key, mrad, srad) {}
+    hit(what) {
+        if(this.hits & what.team) {
+            what.attacked({enemy: this, atk: this.atk});
+        }
+    }
+    atk = 1;
+    color = "#fff";
+    shape = shapes.get("square.4");
+    team = TEAM.GOOD;
+    hits = TEAM.BAD;
+    coll = TEAM.BAD;
+}
+class TheGunner extends Player{
+    get alpha() {
+        if(this.lastSkill > 40) return .4;
+        return super.alpha;
+    }
+    tickSkill() {
+        if(this.lastSkill > 40) {
+            this.r = this.lastSkill * .5;
+            this.team = 0;
+            this.hits = 0;
+            this.coll = 0;
+        }else{
+            this.team = TEAM.GOOD;
+            this.hits = TEAM.BAD;
+            this.coll = TEAM.BAD;
+        }
+    }
+    skill(rad) {
+        if(!this.lastShot) {
+            this.team = TEAM.GOOD;
+            this.hits = TEAM.BAD;
+            this.coll = TEAM.BAD;
+            enemies.push(new Bullet(this, rad));
+            this.lastShot = 15;
+        }
+    }
+    ability(key, mrad, srad) {
+        if(!this.lastSkill) {
+            var {spd} = this;
+            this.spd *= 15;
+            if(!isNaN(mrad)) {
+                this.move(mrad);
+            }
+            this.spd = spd;
+            this.lastSkill = 50;
+        }
+    }
+    color = "#55f";
+    shape = shapes.get("square.4");
+    color2 = "#aaf";
+    shape2 = shapes.get("square.4");
+}
+class TheDasher extends Player{
+    hit(what) {
+        super.hit(what);
+        if(this.lastSkill) {
+            this.hitd += 5;
+        }
+    }
+    hitd = 0;
+    draw2() {
+        var {x, y, s, r, alpha, shape2} = this;
+        if(!shape2) return;
+        x *= scale;
+        y *= scale;
+        s *= scale;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s, r + PI/2);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color2 || this.color;
+        ctx.fill(shape2);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    tickSkill() {
+        if(this.lastSkill > 15) {
+            this.god = true;
+            this.color = "#f00";
+            this.color2 = "#000";
+            this.m = 10;
+        }else if(this.lastSkill) {
+            this.god = false;
+            this.color2 = "#fff";
+            this.color = `hsl(0, ${(this.lastSkill % 10) * 10}%, 50%)`;
+            this.m = 1;
+        }else{
+            this.color = "#f00";
+            this.god = false;
+            this.color2 = "#fff";
+            this.m = 1;
+        }
+        if(this.lastSkill <= this.hitd) {
+            this.lastSkill = 0;
+        }
+    }
+    skill(rad) {
+        if(!this.lastSkill) {
+            var {spd} = this;
+            this.spd *= 25;
+            this.move(rad);
+            this.hitd = 0;
+            this.spd = spd;
+            this.lastSkill = 30;
+        }
+    }
+    ability(key, mrad, srad) {
+        if(!this.lastSkill) {
+            var {spd} = this;
+            this.spd *= 25;
+            if(!isNaN(mrad)) {
+                this.move(mrad);
+                this.hitd = 0;
+            }else{
+                this.spd = spd;
+                return;
+            }
+            this.spd = spd;
+            this.lastSkill = 20;
+        }
+    }
+    shape2 = shapes.get("arrow-box");
+    color = "#f00";
+    color2 = "#fff";
+}
+class TheSummoner extends Player{
+    constructor() {
+        super();
+    }
+    onXp() {
+        var pets = floor(this.p/5);
+        if(pets < (10 - this.alive.length)) {
+            this.p += 1;
+        }
+    }
+    getPet() {
+        this.pet = this.summon();
+    }
+    summon() {
+        var summon = new (this.summons[this.selected]);
+        Bullet.position(summon, random(PI2), this);
+        summon.s = .75;
+        summon.color = this.color;
+        summon.color2 = this.color2;
+        summon.team = TEAM.GOOD;
+        summon.hits = TEAM.BAD;
+        summon.coll = TEAM.BAD + TEAM.GOOD;
+        return summon;
+    }
+    tick() {
+        super.tick();
+        var pets = floor(this.p/5);
+        if(pets < 0) pets = 0;
+        if(pets > 10) pets = 10;
+        if(this.pets.length < pets) {
+            var pet = this.summon();
+            pet.s = .5;
+            this.pets.push(pet);
+        }else this.pets.length = pets;
+        this.r = 0;
+        this.alive = this.alive.filter(blob => !blob.dead);
+        if(pets < (10 - this.alive.length)) {
+            this.p += this.rec;
+        }
+    }
+    rec = 0.02;
+    alive = [];
+    update() {
+        super.update();
+
+        for(let i = 0; i < this.pets.length; i++) {
+            let pet = this.pets[i];
+            if(Entity.distance(this, pet) > 2) {
+                pet.moveTo(this);
+                pet.r = atan(pet.vy, pet.vx);
+            }
+            pet.update();
+            for(let j = i + 1; j < this.pets.length; j++) {
+                let them = this.pets[j];
+                if(Entity.isTouching(pet, them)) {
+                    Entity.collide(pet, them);
+                }
+            }
+        }
+        for(let blob of this.alive) {
+            if(blob.inv.has(this)) {
+                blob.tick();
+            }
+        }
+    }
+    draw() {
+        for(let pet of this.pets) {
+            pet.draw();
+        }
+        super.draw();
+    }
+    ability(key) {
+        if(key == 1) {
+            this.selected = (this.selected + 1) % this.summons.length;
+            var arr = [], len = this.pets.length;
+            for(let i = 0; i < len; i++) {
+                var pet = this.summon();
+                var old = this.pets[i];
+                pet.s = .5;
+                pet.x = old.x;
+                pet.y = old.y;
+                pet.vx = old.vx;
+                pet.vy = old.vy;
+                arr.push(pet);
+            }
+            this.pets = arr;
+        }
+    }
+    explode() {
+        for(let pet of this.pets) {
+            enemies.push(pet);
+        }
+    }
+    skill(rad) {
+        if(!this.lastShot && this.pets.length) {
+            var blob = this.summon();
+            blob.xp = 0;
+            Bullet.position(blob, rad, this);
+            enemies.push(blob);
+            this.alive.push(blob);
+            blob.inv.set(this, 10);
+            this.p -= 5;
+            this.lastShot = 15;
+        }
+    }
+    nextLevel() {
+        for(let blob of this.alive) {
+            blob.dead = DEAD;
+        }
+        this.p = 10;
+    }
+    color = "#d82";
+    color2 = "#555";
+    p = 10;
+    shape = shapes.get("bullet");
+    shape2 = shapes.get("square.4");
+    selected = 0;
+    summons = [Chill, Walker, Mover];
+    pets = [];
+}
+class Tracker extends Chill{
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) return;
+        if(player) {
+            var l = .3;
+            this.r = atan(this.vy, this.vx);
+            if(Entity.distance(this, player) < 25) {
+                var m = 1 - Entity.distance(this, player)/25;
+                if(this.force && m < l) m = l;
+                this.moveTo2(player, m);
+            }
+        }
+    }
+    moveTo2(enemy, mult) {
+        var obj = {...this};
+        obj.x += obj.vx * 3;
+        obj.y += obj.vy * 3;
+        this.move(Entity.radian(enemy, obj), mult);
+    }
+    friction = 0.9;
+    color = "#0f0";
+    shape = shapes.get("square.4");
+    color2 = "#ff0";
+    shape2 = shapes.get("square-ring");
+    hp = 1;
+    xp = 0;
+}
+class TheMagician extends TheSummoner{
+    summons = [Tracker];
+    color = "#5f5";
+    color2 = "#cfc";
+    rec = 0.15;
+    p = 15;
+    shape2 = shapes.get("tophat");
+    draw2() {
+        var {x, y, s, r, alpha, shape2} = this;
+        if(!shape2) return;
+        x *= scale;
+        y *= scale;
+        s *= scale * .8;
+
+        x += s * .15;
+        y += s * .2;
+
+        r = atan(scale, this.vx * scale) - PI/2;
+        // if(!ro) ro = 0;
+
+        // r += ro;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s, r);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color2 || this.color;
+        ctx.fill(shape2);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    summon() {
+        var blob = super.summon();
+        blob.team += TEAM.BULLET;
+        blob.coll = this.coll;
+        return blob;
+    }
+    onXp() {}
+    nextLevel() {
+        super.nextLevel();
+        this.p = 20;
+    }
+    register(what) {
+        for(let pet of this.pets) {
+            pet.register(what);
+        }
+    }
+    skill(rad) {
+        if(!this.lastShot && this.pets.length) {
+            var blob = this.summon();
+            blob.xp = 0; blob.s = .5;
+            Bullet.position(blob, rad, this);
+            enemies.push(blob);
+            this.alive.push(blob);
+            blob.inv.set(this, 10);
+            var a = (blob.spd * 15);
+            blob.vx = cos(rad) * a;
+            blob.vy = sin(rad) * a;
+            this.p -= 5;
+            this.lastShot = 15;
+        }
+    }
+    ability() {
+        for(let pet of this.pets) {
+            this.alive.push(pet);
+            enemies.push(pet);
+            this.p -= 5;
+        }
+        this.pets = [];
+    }
 }
 var main;
 var bosses = new Set;
@@ -1168,37 +1809,135 @@ var game = {
     width: 0,
     height: 0
 };
+var saveData = JSON.parse(localStorage.getItem("data")) || {};
+saveData.save = function() {
+    localStorage.setItem("data", JSON.stringify(saveData));
+};
 onload = () => {
     try{
     document.body.appendChild(canvas);
     onresize();
-    restart();
+    mainMenu.load();
     }catch(err) {console.error(err); console.log(enemies)}
     update();
 };
+{
+    let menu = 0;
+    let players = [];
+    let plasel = 0;
+    let selLvl = 0;
+    let lvlMax = 0;
+    let menus = 2;
+    function mainMenu() {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, game.width, game.height);
+        var h = game.height/10;
+        var i = 0;
+        var s = h * 1.2;
+        var x = (game.width - s)/2;
+        var y = game.height/100;
+        ctx.fillStyle = "#ff5";
+        if(menu == 0) {
+            ctx.fillRect(x, y, s, s);
+        }
+        for(let blob of players) {
+            var s = h/scale;
+            var x = (game.w - s)/2 + s * (i - plasel) * 1.5;
+            var y = game.h/50;
+            blob.drawWith({x, y, s});
+            i += 1;
+        }
+        var text = levelName(selLvl + 1);
+        ctx.font = `${h}px Arial`;
+        var {width} = ctx.measureText(text);
+        var x = (game.width - width)/2;
+        y += s; y *= scale;
+        ctx.fillStyle = expert? "#f0d": "#fff";
+        ctx.fillText(text, x, y + h);
+        s *= scale;
+        y += s/5;
+        x -= s/5;
+        if(menu == 1) {
+            if(selLvl > 0) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + s);
+                ctx.lineTo(x-s, y+s/2);
+                ctx.closePath();
+                ctx.fill();
+            }
+            x += width + s/2 - s/10;
+            if(selLvl < lvlMax) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + s);
+                ctx.lineTo(x+s, y+s/2);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+        ctx.beginPath();
+        if(keys.get("Backspace") == 1) {
+            selLvl = 0;
+            expert = !expert;
+            if(expert) lvlMax = saveData.levelE;
+            else lvlMax = saveData.level;
+            keys.set("Backspace", 2);
+        }
+        if(keys.get("ArrowRight") == 1) {
+            keys.set("ArrowRight", 2);
+            if(menu == 0) ++plasel;
+            if(menu == 1) ++selLvl;
+        }
+        if(keys.get("ArrowLeft") == 1) {
+            keys.set("ArrowLeft", 2);
+            if(menu == 0) --plasel;
+            if(menu == 1) --selLvl;
+        }
+        if(keys.get("ArrowUp") == 1) {
+            keys.set("ArrowUp", 2);
+            --menu;
+        }
+        if(keys.get("ArrowDown") == 1) {
+            keys.set("ArrowDown", 2);
+            ++menu;
+        }
+        plasel += players.length;
+        plasel %= players.length;
+        if(!lvlMax) {
+            lvlMax = 0;
+        }
+        selLvl += lvlMax + 1;
+        selLvl %= lvlMax + 1;
+        menu += menus;
+        menu %= menus;
+        if(keys.get("Space") == 1) {
+            keys.set("Space", 2);
+            mainMenu.active = false;
+            level = selLvl;
+            restart();
+        }
+    }
+    mainMenu.spawn = () => {
+        mainMenu.load();
+        mainMenu.active = false;
+        main = players[plasel];
+    }
+    mainMenu.load = () => {
+        mainMenu.active = true;
+        if(expert) lvlMax = saveData.levelE;
+        else lvlMax = saveData.level;
+        players = [new TheGunner, new TheDasher, new TheSummoner, new TheMagician];
+    };
+}
+
 var level, expert, score;
 function restart() {
     score = 0;
-    main = new Player;
+    mainMenu.spawn();
     enemies = [main];
-    enemies.push(new Xp);
     if(level) level -= 1;
-//     level = 9;
-    // for(let i = 0; i < 10; i++) {
-    //     let a = new Chaser();
-    //     a.spawn();
-    //     enemies.push(a);
-    // }
-    // for(let i = 0; i < 10; i++) {
-    //     let a = new Brain();
-    //     a.spawn();
-    //     enemies.push(a);
-    // }
-    // for(let i = 0; i < 10; i++) {
-    //     let a = new Mover();
-    //     a.spawn();
-    //     enemies.push(a);
-    // }
+    else level = 0;
 }
 onresize = () => {
     game.width = innerWidth;
@@ -1227,6 +1966,10 @@ onfocus = () => {
 };
 var whenFocus = () => {};
 var level = 0;
+var boss = {
+    5: MiniBoss,
+    10: Boss
+};
 const ms = 1000/40;
 var frame = () => new Promise(resolve => {
     setTimeout(() => {
@@ -1237,10 +1980,23 @@ var frame = () => new Promise(resolve => {
         }
     }, ms);
 });
+function levelName(level) {
+    var txt = `Level ${level}`;
+    if(level in boss) {
+        var n = ceil(level/10);
+        if(level % 10 == 0) txt = `Boss ${n}: ${boss[level].name}`;
+        else txt = `Miniboss ${n}: ${boss[level].name}`;
+    }
+    return txt;
+}
 async function update() {
     while(true) {
         await frame();
         try{
+        if(mainMenu.active) {
+            mainMenu();
+            continue;
+        }
         ctx.fillStyle = "#000";
         // ctx.shadowBlur = 0;
         ctx.fillRect(0, 0, game.width, game.height);
@@ -1257,7 +2013,7 @@ async function update() {
             ctx.fillRect(x, y, w * (blob.hp/blob.xHp), h);
             ctx.strokeRect(x, y, w, h);
             var s = 1 + 5/scale;
-            blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: PI * 3/2 + (blob.ro ?? 0), alpha: 1});
+            blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
             if(!enemies.includes(blob)) {
                 bosses.delete(blob);
             }
@@ -1276,6 +2032,7 @@ async function update() {
                 var coll = Entity.collTest(blob, them);
                 var hits = Entity.hitTest(blob, them);
                 if((coll || hits) && Entity.isTouching(blob, them)) {
+                    if(blob.inv.has(them) || them.inv.has(blob)) coll = false;
                     if(coll) Entity.collide(blob, them);
                     if(hits) {
                         blob.hit(them);
@@ -1284,9 +2041,7 @@ async function update() {
                 }
             }
         }
-        var txt = `Level ${level}`;
-        if(level == 5) txt = "MiniBoss";
-        if(level == 10) txt = "Boss 1";
+        var txt = levelName(level);
         ctx.font = `${scale}px Arial`;
         ctx.fillStyle = expert? "#f0d": "#fff";
         ctx.fillText(txt, 0, scale - 5);
@@ -1306,13 +2061,24 @@ async function update() {
         }
 
         if(keys.get("Backspace") == 1) {
-            level = 0;
-            expert = !expert;
-            restart();
+            // level = 0;
+            // expert = !expert;
+            // restart();
+            mainMenu.load();
             keys.set("Backspace", 2);
         }
+
+        var arr = enemies.filter(blob => {
+            return (blob.team & TEAM.BAD) || (blob instanceof Xp);
+        });
+
+        if(keys.get("Enter") == 1) {
+            console.log(arr);
+            keys.set("Enter", 2);
+        }
         
-        if(!main.dead && enemies.filter(blob => blob.team & TEAM.BAD).length == 0) {
+        if(!main.dead && arr.length == 0) {
+            main.nextLevel();
             nextLevel();
         }
         }catch(err) {
@@ -1321,6 +2087,16 @@ async function update() {
     }
 }
 function nextLevel() {
+    if(expert) {
+        if(level > saveData.levelE) {
+            saveData.levelE = level;
+        }
+    }else{
+        if(level > saveData.level) {
+            saveData.level = level;
+        }
+    }
+    saveData.save();
     switch(++level) {
         case 1:
             for(let i = 0; i < 10; i++) {
@@ -1359,8 +2135,8 @@ function nextLevel() {
         case 5:
             var blob = new MiniBoss;
             blob.spawn();
-            enemies.push(blob);
-            bosses.add(blob);
+            var spawn = new Spawner(blob);
+            enemies.push(spawn);
         break;
         case 6:
             for(let i = 0; i < 5; i++) {
@@ -1405,8 +2181,35 @@ function nextLevel() {
         case 10:
             var blob = new Boss;
             blob.spawn();
-            enemies.push(blob);
-            bosses.add(blob);
+            var spawn = new Spawner(blob);
+            enemies.push(spawn);
+        break;
+        case 11:
+            for(let i = 0; i < 5; i++) {
+                var blob = new Mover();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new Turret();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 12:
+            for(let i = 0; i < 10; i++) {
+                var blob = new Turret();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 13:
+            for(let i = 0; i < 10; i++) {
+                var blob = new Mover();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new Bomb();
+                blob.spawn();
+                enemies.push(blob);
+            }
         break;
         default:
             --level;
