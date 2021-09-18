@@ -1037,6 +1037,7 @@ class Summoner extends Brain{
                 if(this.timer++ % 10 == 0) {
                     var blob = new Mover();
                     Bullet.position(blob, PI, this);
+                    blob.coll = 0;
                     blob.color = this.color;
                     enemies.push(blob);
                 }
