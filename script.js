@@ -1,13 +1,52 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
+{
+    function hide(num, reverse) {
+        if(num < 0 || num > 255) throw RangeError(
+            `Number (${num}) is not a 8 bit positive number!`
+        );
+        var bits = [], code = [];
+        for(var i = 0; i < 8; i++) {
+            var n = 2 ** i;
+            var bit = (num & n)? 1: 0;
+            if(MASK & n) {
+                bit = bit? 0: 1;
+            }
+            bits.push(bit);
+            num &= ~n;
+        }
+        var j = 0;
+        for(var i of (reverse? BACK: ORDER)) {
+            var n = 2 ** j;
+            var bit = bits[i];
+            if(MASK & n) {
+                bit = bit? 0: 1;
+            }
+            ++j;
+            code.push(bit);
+        }
+        for(var i = 0; i < 8; i++) {
+            if(code[i]) {
+                num += 2 ** i;
+            }
+        }
+
+        return num;
+    }
+
+    const ORDER = "34057612";
+    const BACK  = "26701354";
+    const MASK  = 0b10110110;
+};
+
 var {
-    cos, sin,
+    cos, sin, 
     atan2: atan,
     abs, sqrt,
     PI, floor,
     round, sign,
-    ceil
+    ceil, min
 } = Math;
 
 var loop = (value, max) => (value % max + max) % max;
@@ -156,9 +195,31 @@ var DEAD = 10;
         ctx.rect(a, 0, w, 1);
     }));
 	shapes.set("tophat", new Path(path => {
-		path.rect(-0.2, -0.2, 1.4, 0.2);
-		path.rect(0, -0.8, 1, 0.6);
+		path.rect(-.2, -.2, 1.4, 0.2);
+		path.rect(0.0, -.8, 1.0, 0.6);
 	}));
+    shapes.set("shades", new Path(ctx => {
+        ctx.rect(0, 0.2, 1, 0.1);
+
+        ctx.moveTo(1.0, 0.2);
+        ctx.lineTo(0.9, 0.4);
+        ctx.lineTo(0.7, 0.4);
+        ctx.lineTo(0.6, 0.2);
+
+        ctx.moveTo(0.5, 0.2);
+        ctx.lineTo(0.4, 0.4);
+        ctx.lineTo(0.2, 0.4);
+        ctx.lineTo(0.1, 0.2);
+    }));
+    shapes.set("suit", new Path(ctx => {
+        ctx.moveTo(0.0, 1.0);
+        // ctx.lineTo(-.1, 1.0);
+        ctx.lineTo(0.0, 0.5);
+        ctx.lineTo(0.5, 0.7);
+        ctx.lineTo(1.0, 0.5);
+        // ctx.lineTo(1.1, 1.0);
+        ctx.lineTo(1.0, 1.0);
+    }));
 }
 class Entity{
     constructor() {
@@ -177,7 +238,7 @@ class Entity{
         }
     }
     dead = 0;
-    update() {
+    movement() {
         var {friction} = this;
         this.vx *= friction;
         this.vy *= friction;
@@ -187,6 +248,9 @@ class Entity{
         this.x += this.vx;
         this.y += this.vy;
         this.screenlock();
+    }
+    update() {
+        this.movement();
         if(this.hp <= 0) {
             ++this.dead;
         }
@@ -205,6 +269,7 @@ class Entity{
         this.drawo();
         this.draw1();
         this.draw2();
+        this.draw3();
     }
     drawWith(obj) {
         obj = {...this, ...obj};
@@ -212,6 +277,7 @@ class Entity{
         // this.drawo.call(obj);
         this.draw1.call(obj);
         this.draw2.call(obj);
+        this.draw3.call(obj);
     }
     draw1() {
         var {x, y, s, r, ro, alpha} = this;
@@ -252,6 +318,29 @@ class Entity{
         ctx.globalAlpha = alpha;
         ctx.fillStyle = this.color2 || this.color;
         ctx.fill(shape2);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    draw3() {
+        var {x, y, s, r, alpha, ro, shape3} = this;
+        if(!shape3) return;
+        x *= scale;
+        y *= scale;
+        s *= scale * .5;
+
+        x += s * .5;
+        y += s * .5;
+
+        if(!r) r = 0;
+        if(!ro) ro = 0;
+
+        r += ro;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s, r);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color3 || this.color2 || this.color;
+        ctx.fill(shape3);
         ctx.resetTransform();
         ctx.restore();
     }
@@ -360,10 +449,10 @@ class Entity{
 		// am = sqrt(am);
 		// bm = sqrt(bm);
 
-		// var hrad = this.radian(b, a);
+		var hrad = this.radian(b, a);
 
-        var ar = a.s/2;
-        var br = b.s/2;
+        // var ar = a.s/2;
+        // var br = b.s/2;
 
         var s = (b.s - a.s)/2;
 
@@ -385,23 +474,23 @@ class Entity{
 		//Line radian
 		var lrad = rDis(PI, hrad);
 
-        var arad = atan(a.vy, a.vx);
-        var brad = atan(b.vy, b.vx);
+        // var arad = atan(a.vy, a.vx);
+        // var brad = atan(b.vy, b.vx);
 
 		//Movement radian
-		var amr = rDis(lrad, arad);
-		var bmr = rDis(lrad, brad);
+		// var amr = rDis(lrad, arad);
+		// var bmr = rDis(lrad, brad);
 
 		//Movement force
-		var amf = cos(amr);
-		var bmf = cos(bmr);
+		// var amf = cos(amr);
+		// var bmf = cos(bmr);
 
-		if(sign(amf) > 0) amf = 0;
-		if(sign(bmf) < 0) bmf = 0;
+		// if(sign(amf) > 0) amf = 0;
+		// if(sign(bmf) < 0) bmf = 0;
 
 		//Movement saved
-		var ams = abs(sin(amr));
-		var bms = abs(sin(bmr));
+		// var ams = abs(sin(amr));
+		// var bms = abs(sin(bmr));
 
 		//Velocity force
 		var avf = dist(a.vx, a.vy);
@@ -555,7 +644,7 @@ function Point(x, y) {
 }
 class Enemy extends Entity{
     hit(what) {
-        if(this.hits & what.team) {
+        if(this.hits & what.team && ((this.team & TEAM.GOOD) || !this.dead)) {
             what.attacked({enemy: this, atk: this.atk});
         }
     }
@@ -758,6 +847,7 @@ class Bullet extends Mover{
         this.team = parent.team + TEAM.BULLET;
         this.hits = parent.hits;
         this.color = parent.color;
+        this.color2 = parent.color2;
         this.coll = parent.coll + TEAM.BULLET;
     }
     static position(what, rad, parent) {
@@ -861,6 +951,7 @@ class Chill extends Enemy{
 }
 class Dasher extends Mover{
     static name = "Dasher";
+    static type = "Miniboss";
     team = TEAM.BOSS + TEAM.BAD;
     hits = TEAM.GOOD;
     coll = 0;
@@ -1198,6 +1289,7 @@ class Summoner extends Brain{
     shape2 = shapes.get("square.4");
     shape = shapes.get("bullet");
     static name = "Summoner";
+    static type = "Boss";
 }
 class Wander extends Walker{
     ro = PI/2;
@@ -1283,6 +1375,7 @@ class Spawner extends Point{
         var {x, y} = this;
         x *= scale;
         y *= scale;
+        y += scale/2;
         ctx.beginPath();
         if(this.time < 30) {
             ctx.arc(x, y, scale * (18/5 + (3 - this.time/10) * 10), 0, PI2);
@@ -1295,7 +1388,7 @@ class Spawner extends Point{
             var blob = this.boss;
             var a = (this.time - 30)/70;
             s = blob.s * a + s * (1 - a);
-            blob.drawWith({x: this.x - s/2, y: this.y - s/2, s, r: 0, alpha: a});
+            blob.drawWith({x: this.x - s/2, y: this.y, s, r: 0, alpha: a});
         }
         // if(this.time > 75) {
             // var s = 0.01;
@@ -1312,6 +1405,7 @@ class Turret extends Chill{
     constructor() {
         super();
         this.r = random(PI2);
+        this.range = expert? 15: 10;
     }
     register(what) {
         if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
@@ -1329,7 +1423,7 @@ class Turret extends Chill{
         if(player && player.dead) delete this.player;
         if(!player) player = main;
         if(this.lastShot) --this.lastShot;
-        if(Entity.distance(this, player) < (expert? 15: 10)) {
+        if(Entity.distance(this, player) < this.range) {
             var rad = Entity.radian(player, this);
             var dis = rDis(this.r - PI/2, rad);
             // this.r = rad + PI/2;
@@ -1407,30 +1501,232 @@ class Bomb extends Chill{
     }
 }
 class Mafia extends Enemy{
-    shape = "square.4";
-    color = "#bbb";
-    color2 = "#d22";
-    color3 = "#22d";
+    tick() {}
+    draw() {
+        var {ox, oy, x, y, alpha} = this;
+        this.drawWith({x: ox, y: oy, alpha: alpha * .2});
+        this.drawWith({x: (ox + x) * .5, y: (oy + y) * .5, alpha: alpha * .5});
+        this.drawWith({alpha});
+    }
+    draw2() {
+        var {x, y, s, r, alpha, shape2} = this;
+        if(!shape2) return;
+        x *= scale;
+        y *= scale;
+        s *= scale;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color2 || this.color;
+        ctx.fill(shape2);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    draw3() {
+        var {x, y, s, r, alpha, shape3} = this;
+        if(!shape3) return;
+        x *= scale;
+        y *= scale;
+        s *= scale;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color3 || this.color2 || this.color;
+        ctx.fill(shape3);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    shape = shapes.get("square.4");
+    shape2 = shapes.get("shades");
+    shape3 = shapes.get("suit");
+    color = "#777";
+    color2 = "#444";
+    color3 = "#ccc";
+}
+class MafiaTurret extends Turret{
+    draw() {
+        var {ox, oy, x, y, alpha} = this;
+        this.drawWith({x: ox, y: oy, alpha: alpha * .2});
+        this.drawWith({x: (ox + x) * .5, y: (oy + y) * .5, alpha: alpha * .5});
+        this.drawWith({alpha});
+    }
+    draw1() {
+        var {x, y, s, r, alpha, shape} = this;
+        if(!shape) return;
+        x *= scale;
+        y *= scale;
+        s *= scale;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.fill(shape);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    draw2() {
+        var {x, y, s, r, alpha, shape2} = this;
+        if(!shape2) return;
+        x *= scale;
+        y *= scale;
+        s *= scale;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color2 || this.color;
+        ctx.fill(shape2);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    draw3() {
+        var {x, y, s, r, alpha, shape3} = this;
+        if(!shape3) return;
+        x *= scale;
+        y *= scale;
+        s *= scale;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color3 || this.color2 || this.color;
+        ctx.fill(shape3);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+    range = 3;
+    constructor() {
+        super();
+        if(!expert) this.range = 7;
+    }
+    shoot(r) {
+        var u = PI/4;
+        var end = r + u;
+        if(!this.lastShot) for(let rad = r - u; rad <= end; rad += u) {
+            var blob = new Bullet(this, rad);
+            blob.team = TEAM.BULLET;
+            blob.coll = TEAM.BULLET;
+            var m = expert? 2: 3;
+            blob.spd  /= m;
+            blob.time = 10;
+            enemies.push(blob);
+            this.lastShot = 40;
+        }
+    }
+    shape = shapes.get("square.4");
+    shape2 = shapes.get("shades");
+    // shape3 = shapes.get("suit");
+    color = "#777";
+    color2 = "#444";
+    color3 = "#ccc";
 }
 class MafiaInvasion extends Mafia{
     tick() {
         var n = this.hp;
         if(n > 10) n = 10;
-        while(this.all.length < n) {
-            var blob = new MafiaEnemy;
+        if(this.time++ % 50 == 0 && this.all.length < n) for(let i = min(3, this.hp2, n - this.all.length); i > 0; i--) {
+            var blob = new (randomOf([MafiaTurret, MafiaGunner, MafiaCharger]));
+            blob.spawn();
             this.all.push(blob);
             enemies.push(blob);
+            --this.hp2;
         }
-        this.all = this.all.filter(blob => !blob.dead);
+        this.all = this.all.filter(blob => {
+            var keep = !blob.dead;
+            if(!keep) --this.hp;
+            return keep;
+        });
     }
+    time = 0;
     team = 0;
     hits = 0;
     coll = 0;
     s = 0;
-    xHp = 20;
-    hp = 20;
-    hp2 = 20;
+    xHp = 30;
+    hp = 30;
+    hp2 = 30;
     all = [];
+    static name = "Mafia";
+    static type = "Invasion";
+}
+class MafiaGunner extends Mafia{
+    constructor() {
+        super();
+        if(!expert) this.spd = 0.04;
+    }
+    tick() {
+        if(this.lastShot) --this.lastShot;
+
+        this.moveTo(main, (30 - this.lastShot)/20);
+        if(Entity.distance(this, main) < 5) {
+            var rad = Entity.radian(main, this);
+            this.shoot(rad);
+        }
+    }
+    shape3 = shapes.get("tophat");
+    lastShot = 0;
+    shoot(rad) {
+        if(!this.lastShot) {
+            var blob = new Bullet(this, rad);
+            blob.team = TEAM.BULLET;
+            blob.coll = TEAM.BULLET;
+            var m = expert? 2: 4;
+            blob.spd  /= m;
+            blob.time *= m;
+            enemies.push(blob);
+            this.lastShot = 50;
+        }
+    }
+    draw3() {
+        var {x, y, s, r, alpha, shape3} = this;
+        if(!shape3) return;
+        x *= scale;
+        y *= scale;
+        s *= scale * .8;
+
+        x += s * .15;
+        y += s * .2;
+
+        r = atan(scale, this.vx * scale) - PI/2;
+        // if(!ro) ro = 0;
+
+        // r += ro;
+
+        ctx.save();
+        ctx.zoom(x, y, s, s, r);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color3 ||this.color2 || this.color;
+        ctx.fill(shape3);
+        ctx.resetTransform();
+        ctx.restore();
+    }
+}
+class MafiaCharger extends Mafia{
+    constructor() {
+        super();
+        if(expert) {
+            this.spd = 0.7;
+        }
+    }
+    tick() {
+        this.moving = dist(this.vx, this.vy) > (expert? 0.3: 0.1);
+        var dis = Entity.distance(this, main);
+        if(!this.moving) {
+            if(!expert) {
+                this.vx = 0;
+                this.vy = 0;
+            }
+            if(dis < (expert? 7: 10)) {
+                this.moveTo(main);
+            }
+        }
+    }
+    m = 5;
+    spd = 0.3;
+    friction = 0.99;
 }
 class Player extends Entity{
     constructor() {
@@ -1545,23 +1841,32 @@ class TheGunner extends Player{
 class TheDasher extends Player{
     hit(what) {
         super.hit(what);
-        if(this.lastSkill) {
-            this.hitd += 5;
-        }
-        if(what.hp <= 0) {
-            var {vx, vy} = this;
-            for(let enemy of enemies) {
-                if(this.hits & enemy.team) {
-                    if(Entity.distance(this, enemy) < 7) {
-                        enemy.attacked({enemy: this, atk: this.atk});
-                    }
-                    if(Entity.distance(this, enemy) < 10) {
-                        Entity.collide(this, enemy);
-                    }
-                }
-                this.vx = vx;
-                this.vy = vy;
-            }
+        // if(this.lastSkill) {
+        //     this.hitd += 5;
+        // }
+        if(what.hp <= 0 && this.god) {
+            what.team = this.team;
+            what.hits = this.hits;
+            what.coll = this.coll;
+            what.color = this.color;
+            what.color2 = this.color2;
+            // what.dead = -10;
+            what.hit = this.hit;
+            what.m = this.m;
+            what.god = true;
+            // var {vx, vy} = this;
+            // for(let enemy of enemies) {
+            //     if(this.hits & enemy.team) {
+            //         if(Entity.distance(this, enemy) < 7) {
+            //             enemy.attacked({enemy: this, atk: this.atk});
+            //         }
+            //         if(Entity.distance(this, enemy) < 10) {
+            //             Entity.collide(this, enemy);
+            //         }
+            //     }
+            //     this.vx = vx;
+            //     this.vy = vy;
+            // }
         }
     }
     hitd = 0;
@@ -1584,17 +1889,27 @@ class TheDasher extends Player{
         if(this.lastSkill > 15) {
             this.god = true;
             this.color = "#f00";
-            this.color2 = "#000";
-            this.m = 10;
+            // this.color2 = "#000";
+            this.m = 5;
+            if(this.s == 1) {
+                this.x -= .25;
+                this.y -= .25;
+                this.s = 1.5;
+            }
         }else if(this.lastSkill) {
             this.god = false;
-            this.color2 = "#fff";
+            // this.color2 = "#fff";
             this.color = `hsl(0, ${(this.lastSkill % 10) * 10}%, 50%)`;
             this.m = 1;
+            if(this.s == 1.5) {
+                this.x += .25;
+                this.y += .25;
+                this.s = 1;
+            }
         }else{
             this.color = "#f00";
             this.god = false;
-            this.color2 = "#fff";
+            // this.color2 = "#fff";
             this.m = 1;
         }
         if(this.lastSkill <= this.hitd) {
@@ -1759,13 +2074,14 @@ class Tracker extends Chill{
         if(player && player.dead) delete this.player;
         if(!player) return;
         if(player) {
-            var l = .3;
-            this.r = atan(this.vy, this.vx);
-            if(Entity.distance(this, player) < 25) {
-                var m = 1 - Entity.distance(this, player)/25;
-                if(this.force && m < l) m = l;
-                this.moveTo2(player, m);
-            }
+            // var l = .3;
+            // this.r = atan(this.vy, this.vx);
+            // if(Entity.distance(this, player) < 25) {
+            //     var m = 1 - Entity.distance(this, player)/25;
+            //     if(this.force && m < l) m = l;
+            //     this.moveTo2(player, m);
+            // }
+            this.moveTo(player);
         }
     }
     moveTo2(enemy, mult) {
@@ -1778,6 +2094,7 @@ class Tracker extends Chill{
         if(!obj2.x) obj2 = enemy;
         this.move(Entity.radian(obj2, obj), mult);
     }
+    spd = 0.05;
     friction = 0.99;
     color = "#0f0";
     shape = shapes.get("square.4");
@@ -1840,12 +2157,12 @@ class TheMagician extends TheSummoner{
             enemies.push(blob);
             this.alive.push(blob);
             blob.inv.set(this, 10);
-            var a = (blob.spd * 15);
+            var a = (blob.spd * 10);
             blob.vx = cos(rad) * a;
             blob.vy = sin(rad) * a;
             blob.hp = 1;
             this.p -= 5;
-            this.lastShot = 15;
+            this.lastShot = 5;
         }
     }
     ability() {
@@ -1859,6 +2176,7 @@ class TheMagician extends TheSummoner{
     }
     p = 0;
 }
+
 var main;
 var bosses = new Set;
 var enemies;
@@ -1885,6 +2203,7 @@ onload = () => {
     }catch(err) {console.error(err); console.log(enemies)}
     update();
 };
+// var ALL_LEVELS = 20;
 {
     let menu = 0;
     let players = [];
@@ -1908,27 +2227,37 @@ onload = () => {
             var s = h/scale;
             var x = (game.w - s)/2 + s * (i - plasel) * 1.5;
             var y = game.h/50;
+            if(i != plasel) {
+                x += .25 * s;
+                y += .25 * s;
+                s *= .5;
+            }
             blob.drawWith({x, y, s});
             i += 1;
         }
+        s = h/scale;
+        var y = game.h/50;
+        y += .25 * s;
         var text = levelName(selLvl + 1);
         ctx.font = `${h}px Arial`;
         var {width} = ctx.measureText(text);
         var x = (game.width - width)/2;
         y += s; y *= scale;
         ctx.fillStyle = expert? "#f0d": "#fff";
+        ctx.strokeStyle = expert? "#f0d": "#fff";
         ctx.fillText(text, x, y + h);
         s *= scale;
         y += s/5;
         x -= s/5;
-        if(menu == 1) {
+        {
             if(selLvl > 0) {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
                 ctx.lineTo(x, y + s);
                 ctx.lineTo(x-s, y+s/2);
                 ctx.closePath();
-                ctx.fill();
+                if(menu == 1) ctx.fill();
+                else ctx.stroke();
             }
             x += width + s/2 - s/10;
             if(selLvl < lvlMax) {
@@ -1937,7 +2266,8 @@ onload = () => {
                 ctx.lineTo(x, y + s);
                 ctx.lineTo(x+s, y+s/2);
                 ctx.closePath();
-                ctx.fill();
+                if(menu == 1) ctx.fill();
+                else ctx.stroke();
             }
         }
         ctx.beginPath();
@@ -1973,6 +2303,7 @@ onload = () => {
         }
         selLvl += lvlMax + 1;
         selLvl %= lvlMax + 1;
+        // selLvl = 14;
         menu += menus;
         menu %= menus;
         if(keys.get("Space") == 1) {
@@ -2041,7 +2372,8 @@ var whenFocus = () => {};
 var level = 0;
 var boss = {
     5: Dasher,
-    10: Summoner
+    10: Summoner,
+    15: MafiaInvasion
 };
 const ms = 1000/40;
 var frame = () => new Promise(resolve => {
@@ -2055,10 +2387,11 @@ var frame = () => new Promise(resolve => {
 });
 function levelName(level) {
     var txt = `Level ${level}`;
+    if(expert) txt += " EX";
     if(level in boss) {
-        var n = ceil(level/10);
-        if(level % 10 == 0) txt = `Boss ${n}: ${boss[level].name}`;
-        else txt = `Miniboss ${n}: ${boss[level].name}`;
+        // var n = ceil(level/10);
+        var event = boss[level];
+        txt = `${event.type}${expert? " EX": ""}: ${event.name}`
     }
     return txt;
 }
@@ -2084,6 +2417,10 @@ async function update() {
             ctx.fillStyle = blob.color2 || blob.color;
             ctx.lineWidth = l;
             ctx.fillRect(x, y, w * (blob.hp/blob.xHp), h);
+            if(blob.hp2) {
+                ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
+                ctx.fillRect(x, y, w * (blob.hp2/blob.xHp), h);
+            }
             ctx.strokeRect(x, y, w, h);
             var s = 1 + 5/scale;
             blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
@@ -2292,6 +2629,12 @@ function nextLevel() {
                 blob.spawn();
                 enemies.push(blob);
             }
+        break;
+        case 15:
+            var blob = new MafiaInvasion;
+            blob.spawn();
+            bosses.add(blob);
+            enemies.push(blob);
         break;
         default:
             --level;
