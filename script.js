@@ -1,45 +1,98 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
-
 {
-    function hide(num, reverse) {
-        if(num < 0 || num > 255) throw RangeError(
-            `Number (${num}) is not a 8 bit positive number!`
-        );
-        var bits = [], code = [];
-        for(var i = 0; i < 8; i++) {
-            var n = 2 ** i;
-            var bit = (num & n)? 1: 0;
-            if(MASK & n) {
-                bit = bit? 0: 1;
-            }
-            bits.push(bit);
-            num &= ~n;
+    class Pointer{
+        /**@param {Touch} touch*/
+        constructor(touch) {
+            this.id = touch.identifier;
+            this.sx = touch.pageX;
+            this.sy = touch.pageY;
+            this.x = this.sx;
+            this.y = this.sy;
+            this.up = false;
+            this.canceled = false;
+            this.used = false;
+            this.start = Date.now();
         }
-        var j = 0;
-        for(var i of (reverse? BACK: ORDER)) {
-            var n = 2 ** j;
-            var bit = bits[i];
-            if(MASK & n) {
-                bit = bit? 0: 1;
-            }
-            ++j;
-            code.push(bit);
+        update(touch) {
+            this.x = touch.pageX;
+            this.y = touch.pageY;
         }
-        for(var i = 0; i < 8; i++) {
-            if(code[i]) {
-                num += 2 ** i;
-            }
+        get end() {
+            return this.up || this.canceled;
         }
-
-        return num;
+        get mx() {
+            return this.x - this.sx;
+        }
+        get my() {
+            return this.y - this.sy;
+        }
     }
-
-    const ORDER = "34057612";
-    const BACK  = "26701354";
-    const MASK  = 0b10110110;
-};
-
+    var mobile;
+    var touches = new (class TouchMap extends Map {
+        /**@returns {Pointer}*/
+        get(id) {return super.get(id)}
+        /**@returns {IterableIterator<Pointer>}*/
+        get all() {return super.values()}
+        /**@returns {Pointer}*/
+        add(touch) {return super.set(touch.id, touch)}
+        /**@returns {Pointer}*/
+        find(test) {for(let touch of this.values())
+            if(test(touch)) return touch;
+        }
+    })();
+    /**@param {Touch} touch*/
+    let touchstart = function(touch) {
+        var pointer = new Pointer(touch);
+        touches.add(pointer); mobile = true;
+    };
+    /**@param {Touch} touch*/
+    let touchmove = function(touch) {
+        var pointer = touches.get(touch.identifier);
+        pointer.update(touch);
+    };
+    /**@param {Touch} touch*/
+    let touchend = function(touch) {
+        var pointer = touches.get(touch.identifier);
+        pointer.up = true;
+    };
+    /**@param {Touch} touch*/
+    let touchcancel = function(touch) {
+        var pointer = touches.get(touch.identifier);
+        pointer.canceled = true;
+    };
+    ontouchstart = e => [...e.changedTouches].forEach(touchstart);
+    ontouchmove = e => [...e.changedTouches].forEach(touchmove);
+    ontouchend = e => [...e.changedTouches].forEach(touchend);
+    ontouchcancel = (e) => [...e.changedTouches].forEach(touchcancel);
+    onmousedown = e => touchstart(e);
+    onmousemove = e => touches.has(undefined) && touchmove(e);
+    onmouseup = e => touchend(e);
+}
+{
+    var Button = class Button{
+        constructor(x, y, w, h) {
+            this.resize(x, y, w, h);
+        }
+        x = 0; y = 0;
+        w = 0; h = 0;
+        /**@param {Pointer} touch*/
+        includes(touch) {
+            return touch.x > this.x       &&
+                touch.y > this.y          &&
+                touch.x < this.x + this.w &&
+                touch.y < this.y + this.h;
+        }
+        resize(x, y, w, h) {
+            Object.assign(this, {x, y, w, h});
+        }
+        draw(color="red") {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(this.x, this.y, this.w, this.h);
+        }
+    }
+}
 var {
     cos, sin, 
     atan2: atan,
@@ -220,6 +273,13 @@ var DEAD = 10;
         ctx.lineTo(1.0, 0.5);
         // ctx.lineTo(1.1, 1.0);
         ctx.lineTo(1.0, 1.0);
+    }));
+    shapes.set("trapoid", new Path(ctx => {
+        ctx.moveTo(1.0, -.1);
+        ctx.lineTo(0.0, 0.0);
+        ctx.lineTo(0.0, 1.0);
+        ctx.lineTo(1.0, 1.1);
+        ctx.closePath();
     }));
 }
 class Entity{
@@ -956,6 +1016,37 @@ class Chill extends Enemy{
     hp = 1;
     xp = 3;
 }
+class Pounder extends Enemy{
+    constructor() {
+        super();
+        this.a = round(random());
+        this.b = round(random());
+        this.time = 0;
+        this.mov = expert? 0.25: 0.15;
+    }
+    tick() {
+        if(this.time) {
+            --this.time;
+            if(this.time == 0 && this.hitWall) {
+                this.a = !this.a;
+            }
+        }else{
+            this.spd = this.mov;
+            if(this.hitWall) {
+                this.b = !this.b;
+                this.time = expert? 5: 10;
+                this.vx = 0;
+                this.vy = 0;
+                this.spd = 0.075;
+            }
+            var a = PI * .5;
+            this.move(this.a * a + this.b * PI);
+        }
+        this.r = atan(this.vy, this.vx);
+    }
+    color = "#ff0";
+    shape = shapes.get("trapoid");
+}
 class Dasher extends Mover{
     static name = "Dasher";
     static type = "Miniboss";
@@ -1052,8 +1143,61 @@ class Dasher extends Mover{
     xp = 15;
 }
 class Squish extends Enemy{
-    static name = "Squish";
+    static name = "Squisher";
     static type = "Boss 2";
+    color = "#f07";
+    color2 = "#f80";
+    shape  = shapes.get("trapoid");
+    shape2 = shapes.get("trapoid");
+    ro = PI * .5;
+    xHp = 20;
+    hp = 20;
+    s = 2;
+    phase = 0;
+    ticks = 0;
+    r = 0;
+    register(enemy) {
+        this.registerPlayer(enemy);
+    }
+    tick() {
+        var p = this.ro;
+        switch(this.phase) {
+            case 0:
+                ++this.ticks;
+                this.m = 10
+                // this.nocoll = this.hits;
+                this.color = `hsl(332, 50%, ${(this.ticks % 10) * 5 + 50}%)`;
+                if(this.ticks < 40) {
+                    this.r += random(.3);
+                }
+                if(this.ticks % 5 == 0) {
+                    for(let i = 0; i < 2; i++) {
+                        enemies.push(new Bullet(this, this.r + i * PI));
+                    }
+                }
+                if(this.ticks == 50) {
+                    this.color = "#f07";
+                    this.phase = 1;
+                    this.ticks = 0;
+                    this.a = 0;
+                    this.b = 0;
+                    this.spd = 0.2;
+                }
+            break;
+            case 1:
+                ++this.ticks;
+                this.move(this.r + p);
+                if(this.hitWall) {
+                    this.r = atan(this.vy, this.vx) - p;
+                }
+                if(this.ticks == 75) {
+                    this.phase = 2;
+                }
+            break;
+            case 2:
+            break;
+        }
+    }
 }
 class Summoner extends Brain{
     team = TEAM.BOSS + TEAM.BAD;
@@ -1815,6 +1959,71 @@ class Player extends Entity{
         this.x = (game.w - this.s)/2;
         this.y = (game.h - this.s)/2;
     }
+	touchv2() {
+		var {touch, touch2} = this;
+        var mx = (this.x + this.s * .5) * scale;
+        var my = (this.y + this.s * .5) * scale;
+		if(touch && touch.end) touch = false;
+		if(!touch) touches.forEach(obj => {
+			if(obj.sx < innerWidth/2 && obj != touch2 && !obj.end && Date.now() - ms * 5 > obj.start) {
+				touch = obj;
+			}
+		});
+		if(!touch2 && !this.skl) touches.forEach(obj => {
+			if(obj.sx > innerWidth/2 && obj != touch && !obj.end) {
+				touch2 = obj;
+			}
+		});
+		if(touch && !this.moved) {
+            var mrad = atan(touch.my, touch.mx);
+            var dis = dist(touch.mx, touch.my);
+            var inside = dis > scale;
+			if(inside) this.move(mrad);
+			this.touch = touch;
+			ctx.strokeStyle = inside? this.color: this.color2;
+			ctx.beginPath();
+			ctx.lineWidth = scale * .125;
+            ctx.arc(touch.sx, touch.sy, scale, 0, PI2);
+            ctx.stroke();
+			ctx.lineWidth = scale * .25;
+			ctx.beginPath();
+			ctx.strokeStyle = this.color;
+			ctx.moveTo(touch.sx, touch.sy);
+			ctx.lineTo(touch.x, touch.y);
+			ctx.moveTo(mx, my);
+			ctx.lineTo(mx + touch.mx, my + touch.my);
+			ctx.stroke();
+		}
+		if(touch2 && !this.skl) {
+			this.touch2 = touch2;
+            var hrad = atan(touch2.my, touch2.mx);
+            var dis = dist(touch2.mx, touch2.my);
+            var time = Date.now() - touch2.start;
+            var overdue = time > ms * 10;
+            var inside = dis > scale * 2;
+			if(time > ms * 3 || touch2.end) {
+				if(inside) {
+					this.skill(hrad);
+				}else if(overdue || touch2.end) {
+                    this.ability(overdue? 3: 1, mrad, hrad);
+                }
+			}
+			if(touch2.end) delete this.touch2;
+			ctx.lineWidth = scale * .125;
+			ctx.beginPath();
+            ctx.arc(touch2.sx, touch2.sy, scale * 2, 0, PI2);
+            ctx.strokeStyle = inside? this.color2: this.color;
+            ctx.stroke();
+			ctx.lineWidth = scale * .25;
+			ctx.beginPath();
+			ctx.strokeStyle = this.color2;
+			ctx.moveTo(touch2.sx, touch2.sy);
+			ctx.lineTo(touch2.x, touch2.y);
+			ctx.moveTo(mx, my);
+			ctx.lineTo(mx + touch2.x - touch2.sx, my + touch2.y - touch2.sy);
+			ctx.stroke();
+		}
+	}
     onXp() {}
     nextLevel() {}
     explode() {
@@ -1857,6 +2066,7 @@ class Player extends Entity{
             this.ability(keys.get("ShiftRight"), mrad, srad);
             keys.set("ShiftRight", 2);
         }
+        this.touchv2();
         if(this.lastShot) --this.lastShot;
         if(this.lastSkill) --this.lastSkill;
         this.r = atan(this.vy, this.vx);
@@ -1876,6 +2086,98 @@ class Player extends Entity{
     team = TEAM.GOOD;
     hits = TEAM.BAD;
     coll = TEAM.BAD;
+}
+class MiniDash extends Dasher{
+    spawn() {
+        var d = 10;
+        var I = this;
+        do{
+            this.x = random(game.w - this.s);
+            this.y = random(game.h - this.s);
+        }while(close());
+        function close() {
+            for(let blob of enemies) {
+                if(blob instanceof Player && Entity.distance(blob, I) < d) {
+                    return true;
+                }
+                if(Entity.hitTest(I, blob) && Entity.isTouching(blob, I)) {
+                    return true;
+                }
+            }
+        }
+        return this;
+    }
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = main;
+        var m = this.hp/this.xHp;
+        switch(this.phase) {
+            case 0:
+                this.spd = expert? .12: .075;
+                this.moveTo(player);
+                this.r = atan(this.vy, this.vx);
+                // this.nocoll = this.hits;
+                this.m = 10
+                if(Entity.distance(this, player) < 5) {
+                    this.phase = 1;
+                    this.flash = 0;
+                }
+            break;
+            case 1:
+                ++this.flash;
+                this.m = 10
+                // this.nocoll = this.hits;
+                this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
+                if(expert || this.flash < 30) {
+                    this.r = Entity.radian(player, this);
+                }
+                if(this.flash >= 10) {
+                    this.phase = 2;
+                    this.spd = 0.3;
+                    this.timer = 0;
+                }
+            break;
+            case 2:
+                this.timer++;
+                var b = 5;
+                var c = expert? 0: (5 * m);
+                this.m = 0.1;
+                // this.nocoll = 0;
+                if(this.timer < b) {
+                    if(expert) this.moveTo(player);
+                    else this.move(this.r);
+                    // this.move(this.r);
+                }else if(this.timer < b + c) {
+                    var a = this.timer - b;
+                    this.color = `hsl(0, ${a * 2}%, 50%)`;
+                }else{
+                    // if(expert) {
+                    //     var u = PI2/8;
+                    //     for(let i = 0; i < PI2; i += u) {
+                    //         var blob = new Bullet(this, i);
+                    //         blob.color = "#f00";
+                    //         // blob.coll = 0;
+                    //         blob.time = 30;
+                    //         blob.spd = 0.5;
+                    //         // blob.s *= 2;
+                    //         enemies.push(blob);
+                    //     }
+                    // }
+                    this.phase = 0;
+                    this.color = "#f00";
+                }
+                this.r = atan(this.vy, this.vx);
+            break;
+        }
+    }
+    xHp = 1;
+    hp  = 1;
+    team = TEAM.BAD + TEAM.ENEMY;
+    hits = TEAM.GOOD;
+    coll = TEAM.ENEMY;
+    s = 1;
+    mini = true;
 }
 class TheGunner extends Player{
     get alpha() {
@@ -2374,123 +2676,6 @@ class TheReformed extends TheGunner{
     color2 = "#f57";
     icolor = "#ff0";
 }
-class Pounder extends Enemy{
-    constructor() {
-        super();
-        this.a = round(random());
-        this.b = round(random());
-        this.time = 0;
-    }
-    tick() {
-        if(this.time) --this.time;
-        else{
-            this.spd = expert? 0.25: 0.15;
-            if(this.hitWall) {
-                this.b = !this.b;
-                this.time = expert? 5: 10;
-                this.vx = 0;
-                this.vy = 0;
-                this.spd = 0.075;
-            }
-            var a = PI * .5;
-            this.move(this.a * a + this.b * PI);
-        }
-    }
-    color = "#ff0";
-    shape = shapes.get("square");
-}
-class MiniDash extends Dasher{
-    spawn() {
-        var d = 10;
-        var I = this;
-        do{
-            this.x = random(game.w - this.s);
-            this.y = random(game.h - this.s);
-        }while(close());
-        function close() {
-            for(let blob of enemies) {
-                if(blob instanceof Player && Entity.distance(blob, I) < d) {
-                    return true;
-                }
-                if(Entity.hitTest(I, blob) && Entity.isTouching(blob, I)) {
-                    return true;
-                }
-            }
-        }
-        return this;
-    }
-    tick() {
-        var {player} = this;
-        if(player && player.dead) delete this.player;
-        if(!player) player = main;
-        var m = this.hp/this.xHp;
-        switch(this.phase) {
-            case 0:
-                this.spd = expert? .12: .075;
-                this.moveTo(player);
-                this.r = atan(this.vy, this.vx);
-                // this.nocoll = this.hits;
-                this.m = 10
-                if(Entity.distance(this, player) < 5) {
-                    this.phase = 1;
-                    this.flash = 0;
-                }
-            break;
-            case 1:
-                ++this.flash;
-                this.m = 10
-                // this.nocoll = this.hits;
-                this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
-                if(expert || this.flash < 30) {
-                    this.r = Entity.radian(player, this);
-                }
-                if(this.flash >= 10) {
-                    this.phase = 2;
-                    this.spd = 0.3;
-                    this.timer = 0;
-                }
-            break;
-            case 2:
-                this.timer++;
-                var b = 5;
-                var c = expert? 0: (5 * m);
-                this.m = 0.1;
-                // this.nocoll = 0;
-                if(this.timer < b) {
-                    if(expert) this.moveTo(player);
-                    else this.move(this.r);
-                    // this.move(this.r);
-                }else if(this.timer < b + c) {
-                    var a = this.timer - b;
-                    this.color = `hsl(0, ${a * 2}%, 50%)`;
-                }else{
-                    // if(expert) {
-                    //     var u = PI2/8;
-                    //     for(let i = 0; i < PI2; i += u) {
-                    //         var blob = new Bullet(this, i);
-                    //         blob.color = "#f00";
-                    //         // blob.coll = 0;
-                    //         blob.time = 30;
-                    //         blob.spd = 0.5;
-                    //         // blob.s *= 2;
-                    //         enemies.push(blob);
-                    //     }
-                    // }
-                    this.phase = 0;
-                    this.color = "#f00";
-                }
-                this.r = atan(this.vy, this.vx);
-            break;
-        }
-    }
-    xHp = 1;
-    hp  = 1;
-    team = TEAM.BAD + TEAM.ENEMY;
-    hits = TEAM.GOOD;
-    coll = TEAM.ENEMY;
-    s = 1;
-    mini = true;
-}
 var main;
 var bosses = new Set;
 var enemies;
@@ -2525,6 +2710,20 @@ onload = () => {
     let selLvl = 0;
     let lvlMax = 0;
     let menus = 2;
+    let levelButton = new Button;
+    let nextButton = new Button;
+    let lastButton = new Button;
+    let startButton = new Button;
+    let swapButton = new Button;
+    /**@param {Button} button*/
+    function buttonClick(button) {
+        for(let touch of touches.all) {
+            if(touch.up && !touch.used && button.includes(touch)) {
+                touch.used = true;
+                return true;
+            }
+        }
+    }
     function mainMenu() {
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, game.width, game.height);
@@ -2537,18 +2736,28 @@ onload = () => {
         // if(menu == 0) {
         //     ctx.fillRect(x, y, s, s);
         // }
+        var swap = false;
         for(let blob of players) {
             var s = h/scale;
             var x = (game.w - s)/2 + s * (i - plasel) * 1.5;
             var y = game.h/50;
             if(i != plasel) {
+                swapButton.resize(x * scale, y * scale, s * scale, s * scale);
+                swapButton.draw("purple");
+                if(buttonClick(swapButton)) {
+                    swap = i;
+                }
                 x += .25 * s;
                 y += .25 * s;
                 s *= .5;
+            }else{
+                startButton.resize(x * scale, y * scale, s * scale, s * scale);
+                startButton.draw("blue");
             }
             blob.drawWith({x, y, s});
             i += 1;
         }
+        if(swap !== false) plasel = swap;
         s = h/scale;
         var y = game.h/50;
         y += .25 * s;
@@ -2559,8 +2768,9 @@ onload = () => {
         y += s; y *= scale;
         ctx.fillStyle = expert? "#f0d": "#fff";
         ctx.strokeStyle = expert? "#f0d": "#fff";
-        ctx.lineWidth = 2;
+        levelButton.resize(x, y + h * .2, width, h);
         ctx.fillText(text, x, y + h);
+        levelButton.draw("yellow");
         s *= scale;
         y += s/5;
         x -= s/5;
@@ -2571,9 +2781,12 @@ onload = () => {
                 ctx.lineTo(x, y + s);
                 ctx.lineTo(x-s, y+s/2);
                 ctx.closePath();
+                ctx.lineWidth = 2;
                 if(menu == 1) ctx.fill();
                 else ctx.stroke();
             }
+            lastButton.resize(x - s, y, s, s);
+            lastButton.draw("red");
             x += width + s/2 - s/10;
             if(selLvl < lvlMax) {
                 ctx.beginPath();
@@ -2581,36 +2794,33 @@ onload = () => {
                 ctx.lineTo(x, y + s);
                 ctx.lineTo(x+s, y+s/2);
                 ctx.closePath();
+                ctx.lineWidth = 2;
                 if(menu == 1) ctx.fill();
                 else ctx.stroke();
             }
+            nextButton.resize(x, y, s, s);
+            nextButton.draw("green");
         }
         ctx.beginPath();
-        if(keys.get("Backspace") == 1) {
+        touch = undefined;
+        if(keys.use("Backspace") || buttonClick(levelButton)) {
             selLvl = 0;
             expert = !expert;
             if(expert) lvlMax = saveData.levelE;
             else lvlMax = saveData.level;
-            keys.set("Backspace", 2);
         }
-        if(keys.get("ArrowRight") == 1) {
-            keys.set("ArrowRight", 2);
+        if(keys.use("ArrowRight")) {
             if(menu == 0) ++plasel;
             if(menu == 1) ++selLvl;
         }
-        if(keys.get("ArrowLeft") == 1) {
-            keys.set("ArrowLeft", 2);
+        if(keys.use("ArrowLeft")) {
             if(menu == 0) --plasel;
             if(menu == 1) --selLvl;
         }
-        if(keys.get("ArrowUp") == 1) {
-            keys.set("ArrowUp", 2);
-            --menu;
-        }
-        if(keys.get("ArrowDown") == 1) {
-            keys.set("ArrowDown", 2);
-            ++menu;
-        }
+        if(buttonClick(nextButton)) ++selLvl;
+        if(buttonClick(lastButton)) --selLvl;
+        if(keys.use("ArrowUp")) --menu;
+        if(keys.use("ArrowDown")) ++menu;
         plasel += players.length;
         plasel %= players.length;
         if(!lvlMax) {
@@ -2621,12 +2831,15 @@ onload = () => {
         // selLvl = 15;
         menu += menus;
         menu %= menus;
-        if(keys.get("Space") == 1) {
+        if(keys.get("Space") == 1 || buttonClick(startButton)) {
             keys.set("Space", 2);
             mainMenu.active = false;
             level = selLvl + 1;
             restart();
             canvas.requestFullscreen();
+        }
+        for(let touch of touches.all) {
+            if(touch.end) touch.used = true;
         }
     }
     mainMenu.spawn = () => {
@@ -2674,7 +2887,11 @@ onresize = () => {
     canvas.width = game.width;
     canvas.height = game.height;
 };
-var keys = new Map;
+var keys = new (class Keys extends Map {
+    use(code) {
+        return this.get(code) == 1 && this.set(code, 2);
+    }
+});
 onkeydown = ({code}) => keys.set(code, keys.has(code) * 2 + 1);
 onkeyup = ({code})   => keys.delete(code);
 
@@ -2692,7 +2909,8 @@ var level = 0;
 var boss = {
     5: Dasher,
     10: Summoner,
-    15: MafiaInvasion
+    15: MafiaInvasion,
+    20: Squish
 };
 const ms = 1000/40;
 var frame = () => new Promise(resolve => {
@@ -2994,8 +3212,52 @@ function nextLevel() {
                 enemies.push(blob);
             }
         break;
+        case 20:
+            var blob = new Squish();
+            blob.spawn();
+            bosses.add(blob);
+            enemies.push(blob);
+        break;
         default:
             --level;
         break;
     }
 }
+{
+    function hide(num, reverse) {
+        if(num < 0 || num > 255) throw RangeError(
+            `Number (${num}) is not a 8 bit positive number!`
+        );
+        var bits = [], code = [];
+        for(var i = 0; i < 8; i++) {
+            var n = 2 ** i;
+            var bit = (num & n)? 1: 0;
+            if(MASK & n) {
+                bit = bit? 0: 1;
+            }
+            bits.push(bit);
+            num &= ~n;
+        }
+        var j = 0;
+        for(var i of (reverse? BACK: ORDER)) {
+            var n = 2 ** j;
+            var bit = bits[i];
+            if(MASK & n) {
+                bit = bit? 0: 1;
+            }
+            ++j;
+            code.push(bit);
+        }
+        for(var i = 0; i < 8; i++) {
+            if(code[i]) {
+                num += 2 ** i;
+            }
+        }
+
+        return num;
+    }
+
+    const ORDER = "34057612";
+    const BACK  = "26701354";
+    const MASK  = 0b10110110;
+};
