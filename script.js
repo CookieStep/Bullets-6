@@ -70,6 +70,7 @@ var canvas = document.createElement("canvas"),
     onmouseup = e => touchend(e);
 }
 {
+    var showButtons;
     var Button = class Button{
         constructor(x, y, w, h) {
             this.resize(x, y, w, h);
@@ -87,6 +88,7 @@ var canvas = document.createElement("canvas"),
             Object.assign(this, {x, y, w, h});
         }
         draw(color="red") {
+            if(!showButtons) return;
             ctx.strokeStyle = color;
             ctx.lineWidth = 3;
             ctx.strokeRect(this.x, this.y, this.w, this.h);
@@ -1965,7 +1967,7 @@ class Player extends Entity{
         var my = (this.y + this.s * .5) * scale;
 		if(touch && touch.end) touch = false;
 		if(!touch) touches.forEach(obj => {
-			if(obj.sx < innerWidth/2 && obj != touch2 && !obj.end && Date.now() - ms * 5 > obj.start) {
+			if(obj.sx < innerWidth/2 && obj != touch2 && !obj.end) {
 				touch = obj;
 			}
 		});
@@ -1980,6 +1982,7 @@ class Player extends Entity{
             var inside = dis > scale;
 			if(inside) this.move(mrad);
 			this.touch = touch;
+            touch.used = true;
 			ctx.strokeStyle = inside? this.color: this.color2;
 			ctx.beginPath();
 			ctx.lineWidth = scale * .125;
@@ -2008,6 +2011,7 @@ class Player extends Entity{
                     this.ability(overdue? 3: 1, mrad, hrad);
                 }
 			}
+            touch2.used = true;
 			if(touch2.end) delete this.touch2;
 			ctx.lineWidth = scale * .125;
 			ctx.beginPath();
@@ -2932,99 +2936,102 @@ function levelName(level) {
     }
     return txt;
 }
-async function update() {
-    while(true) {
-        await frame();
-        try{
-        if(mainMenu.active) {
-            mainMenu();
-            continue;
-        }
-        ctx.fillStyle = "#000";
-        // ctx.shadowBlur = 0;
-        ctx.fillRect(0, 0, game.width, game.height);
-        var i = 0;
-        bosses.forEach(blob => {
-            var l = 5;
-            var w = game.width * 5/8;
-            var x = (game.width - w)/2;
-            var h = scale;
-            var y = game.height - (i * 1.5 + 1) * h - l/2;
-            ctx.strokeStyle = blob.color;
-            ctx.fillStyle = blob.color2 || blob.color;
-            ctx.lineWidth = l;
-            ctx.fillRect(x, y, w * (blob.hp/blob.xHp), h);
-            if(blob.hp2) {
-                ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
-                ctx.fillRect(x, y, w * (blob.hp2/blob.xHp), h);
+{
+    let leaveButton = new Button;
+    let restartButton = new Button;
+    var update = async function() {
+        while(true) {
+            await frame();
+            try{
+            if(mainMenu.active) {
+                mainMenu();
+                continue;
             }
-            ctx.strokeRect(x, y, w, h);
-            var s = 1 + 5/scale;
-            blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
-            if(!enemies.includes(blob)) {
-                bosses.delete(blob);
-            }
-            ++i;
-        });
-        // main.update();
-        // main.draw();
-        for(let i = 0; i < enemies.length; i++) {
-            let blob = enemies[i];
-            blob.update();
-            blob.draw();
-            for(let j = i + 1; j < enemies.length; j++) {
-                let them = enemies[j];
-                them.register(blob);
-                blob.register(them);
-                var coll = Entity.collTest(blob, them);
-                var hits = Entity.hitTest(blob, them);
-                if((coll || hits) && Entity.isTouching(blob, them)) {
-                    if(blob.inv.has(them) || them.inv.has(blob)) coll = false;
-                    if(coll) Entity.collide(blob, them);
-                    if(hits) {
-                        blob.hit(them);
-                        them.hit(blob);
+            ctx.fillStyle = "#000";
+            // ctx.shadowBlur = 0;
+            ctx.fillRect(0, 0, game.width, game.height);
+            var i = 0;
+            bosses.forEach(blob => {
+                var l = 5;
+                var w = game.width * 5/8;
+                var x = (game.width - w)/2;
+                var h = scale;
+                var y = game.height - (i * 1.5 + 1) * h - l/2;
+                ctx.strokeStyle = blob.color;
+                ctx.fillStyle = blob.color2 || blob.color;
+                ctx.lineWidth = l;
+                ctx.fillRect(x, y, w * (blob.hp/blob.xHp), h);
+                if(blob.hp2) {
+                    ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
+                    ctx.fillRect(x, y, w * (blob.hp2/blob.xHp), h);
+                }
+                ctx.strokeRect(x, y, w, h);
+                var s = 1 + 5/scale;
+                blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
+                if(!enemies.includes(blob)) {
+                    bosses.delete(blob);
+                }
+                ++i;
+            });
+            // main.update();
+            // main.draw();
+            for(let i = 0; i < enemies.length; i++) {
+                let blob = enemies[i];
+                blob.update();
+                blob.draw();
+                for(let j = i + 1; j < enemies.length; j++) {
+                    let them = enemies[j];
+                    them.register(blob);
+                    blob.register(them);
+                    var coll = Entity.collTest(blob, them);
+                    var hits = Entity.hitTest(blob, them);
+                    if((coll || hits) && Entity.isTouching(blob, them)) {
+                        if(blob.inv.has(them) || them.inv.has(blob)) coll = false;
+                        if(coll) Entity.collide(blob, them);
+                        if(hits) {
+                            blob.hit(them);
+                            them.hit(blob);
+                        }
                     }
                 }
             }
-        }
-        var txt = levelName(level);
-        ctx.font = `${scale}px Arial`;
-        ctx.fillStyle = expert? "#f0d": "#fff";
-        ctx.fillText(txt, 0, scale - 5);
-        var txt = `Score: ${score}`;
-        ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale - 5);
+            var txt = levelName(level);
+            ctx.font = `${scale}px Arial`;
+            ctx.fillStyle = expert? "#f0d": "#fff";
+            ctx.fillText(txt, 0, scale - 5);
+            var len = ctx.measureText("Level A").width;
+            var txt = `Score: ${score}`;
+            ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale - 5);
 
-        let a = [];
-        enemies = enemies.filter(blob => {
-            if(blob.dead < DEAD) return true;
-            else a.push(blob);
-        });
-        a.forEach(blob => blob.explode());
+            let a = [];
+            enemies = enemies.filter(blob => {
+                if(blob.dead < DEAD) return true;
+                else a.push(blob);
+            });
+            a.forEach(blob => blob.explode());
 
-        if(keys.get("Space") == 1) {
-            restart();
-            keys.set("Space", 2);
-        }
+            restartButton.resize(0, 0, innerWidth, innerHeight);
+            restartButton.draw("yellow");
 
-        if(keys.get("Backspace") == 1) {
-            // level = 0;
-            // expert = !expert;
-            // restart();
-            mainMenu.load();
-            keys.set("Backspace", 2);
-        }
+            leaveButton.resize(0, 0, len, len);
+            leaveButton.draw("red");
+            if(keys.use("Backspace") || buttonClick(leaveButton)) {
+                mainMenu.load();
+            }else if(keys.use("Space") || buttonClick(restartButton)) {
+                restart();
+            }
 
-        var arr = enemies.filter(blob => {
-            return (blob.team & TEAM.BAD) || (blob instanceof Xp);
-        });
-        
-        if(!main.dead && arr.length == 0) {
-            main.nextLevel();
-            nextLevel();
-        }
-        }catch(err) {
-            console.error(err);
+            var arr = enemies.filter(blob => {
+                return (blob.team & TEAM.BAD) || (blob instanceof Xp);
+            });
+            
+            if(!main.dead && arr.length == 0) {
+                main.nextLevel();
+                nextLevel();
+            }
+            }catch(err) {
+                console.error(err);
+            }
         }
     }
 }
