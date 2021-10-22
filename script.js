@@ -1133,7 +1133,7 @@ class Dasher extends Mover{
     attacked(obj) {
         super.attacked(obj);
 
-        var a = 5;
+        var a = 5 * obj.atk;
         var o = random(PI);
         for(let i = 0; i < a; i++) {
             var blob = new Xp;
@@ -1167,7 +1167,7 @@ class Squish extends Enemy{
     attacked(obj) {
         super.attacked(obj);
 
-        var a = 10;
+        var a = 10 * obj.atk;
         var o = random(PI);
         for(let i = 0; i < a; i++) {
             var blob = new Xp;
@@ -1189,7 +1189,8 @@ class Squish extends Enemy{
                 if(this.ticks < 40) {
                     this.r += random(.3);
                 }
-                if(this.ticks % 5 == 0) {
+                var m = expert? 5: 15;
+                if(this.ticks % m == 0) {
                     for(let i = 0; i < 2; i++) {
                         var blob = new Bullet(this, this.r + i * PI);
                         blob.m = 0.01;
@@ -1202,12 +1203,14 @@ class Squish extends Enemy{
                     this.ticks = 0;
                     this.a = 0;
                     this.b = 0;
-                    this.spd = 0.2;
+                    this.spd = expert? 0.3: 0.15;
                 }
             break;
             case 1:
                 ++this.ticks;
-                this.move(this.r + p);
+                if(expert || this.ticks < 60) {
+                    this.move(this.r + p);
+                }
                 if(this.hitWall) {
                     this.r = atan(this.vy, this.vx) - p;
                 }
@@ -1218,8 +1221,8 @@ class Squish extends Enemy{
             break;
             case 2:
                 ++this.ticks;
-                if(this.ticks % 8 == 0 && this.ticks <= 32) {
-                    var a = this.ticks * .125;
+                if(this.ticks % (expert? 4: 8) == 0 && this.ticks <= (expert? 16: 32)) {
+                    var a = this.ticks * (expert? .25: .125);
                     let blob = new Turret();
                     var rad = a * p;
                     Bullet.position(blob, rad + PI/8, this);
@@ -1236,7 +1239,7 @@ class Squish extends Enemy{
                     } 
                     enemies.push(blob);
                 }
-                if(this.ticks == 60) {
+                if(this.ticks == (expert? 50: 75)) {
                     this.phase = 3;
                     this.ticks = 0;
                     for(let rad = 0; rad < PI2; rad += p) {
@@ -1262,7 +1265,7 @@ class Squish extends Enemy{
                 if(this.ticks == 50) {
                     this.phase = 4;
                     this.ticks = 0;
-                    this.spd = 0.3;
+                    this.spd = expert? 0.3: 0.15;
                     this.m = 0.1;
                 }
             break;
@@ -1349,7 +1352,7 @@ class Summoner extends Brain{
         super.attacked(obj);
         if(this.god) return;
         
-        var a = 7;
+        var a = 7 * obj.atk;
         var o = random(PI);
         for(let i = 0; i < a; i++) {
             var blob = new Xp;
@@ -2783,21 +2786,21 @@ class TheMagician extends SummonerClass{
 class TheReformed extends TheGunner{
     constructor() {
         super();
-        this.spd *= 1.2;
+        this.spd *= 1.5;
     }
     skill(r) {
-        var u = PI/12;
-        var end = r + u * 2.5;
+        var u = PI/48;
+        var end = r + u * 5.1;
         if(!this.lastShot && this.bullets && !this.reloading) {
             --this.bullets;
-            for(let rad = r - u * 2; rad <= end; rad += u) {
+            for(let rad = r - u * 5; rad <= end; rad += u) {
                 var blob = new Bullet(this, rad);
-                blob.team = TEAM.BULLET;
+                blob.team = TEAM.BULLET + TEAM.GOOD;
                 blob.coll = TEAM.BULLET;
                 // blob.spd;
                 blob.nocoll = TEAM.GOOD;
                 blob.m = 20;
-                blob.time = 4;
+                blob.time = 10;
                 blob.atk = .25;
                 enemies.push(blob);
                 this.lastShot = 10;
@@ -2805,7 +2808,7 @@ class TheReformed extends TheGunner{
         }
     }
     nextLevel() {
-        this.bullets = 5;
+        this.bullets = 10;
     }
     ability(key) {
         if(key == 1 && this.bullets != this.max) {
@@ -2818,13 +2821,13 @@ class TheReformed extends TheGunner{
                 this.reloading = false;
             }else{
                 this.bullets += 1;
-                this.lastShot = 10;
+                this.lastShot = 5;
             }
         }
     }
     
     bullets = 0;
-    max = 10;
+    max = 20;
     time = 0;
     draw() {
         super.draw();
