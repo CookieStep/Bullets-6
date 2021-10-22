@@ -2981,7 +2981,8 @@ class TheLucky extends TheGunner{
     desc = [
         "Happy go lucky gunner",
         "Skill: Machine gun",
-        "Ability: Evade"
+        "Ability: Evade",
+        "Passive: Stand still to increase accuracy"
     ];
     cols = [
         "#ff0",
@@ -3000,10 +3001,10 @@ class TheLucky extends TheGunner{
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
             this.coll = TEAM.BAD;
-            rad += (srand() - .5) * PI * .5;
+            rad += (srand() - .5) * PI * (this.mrad === false? .2: .5);
             var blob = new Bullet(this, rad);
             blob.time = 10;
-            blob.atk = .1;
+            blob.atk = .2;
             // blob.m = 1;
             blob.hp = 0.1;
             blob.team = TEAM.BULLET + TEAM.ALLY;
