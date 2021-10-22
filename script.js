@@ -150,7 +150,8 @@ var TEAM = {
     BAD:  a(1),
     BULLET: a(2),
     ENEMY: a(4),
-    BOSS: a(5)
+    BOSS: a(5),
+    ALLY: a(6)
 };
 var DEAD = 10;
 {
@@ -282,6 +283,13 @@ var DEAD = 10;
         ctx.lineTo(0.0, 0.0);
         ctx.lineTo(0.0, 1.0);
         ctx.lineTo(1.0, 1.1);
+        ctx.closePath();
+    }));
+    shapes.set("trapoid-2", new Path(ctx => {
+        ctx.moveTo(1.0, 0.0);
+        ctx.lineTo(0.0, 0.0);
+        ctx.lineTo(-.1, 1.0);
+        ctx.lineTo(1.1, 1.0);
         ctx.closePath();
     }));
 }
@@ -1750,7 +1758,7 @@ class Turret extends Chill{
             var dis = rDis(this.r - PI/2, rad);
             // this.r = rad + PI/2;
             var m = this.mo;
-            if(expert) {
+            if(expert || this.good) {
                 if(abs(dis) < m) {
                     this.r = rad + PI/2;
                     this.shoot(this.r - PI/2);
@@ -1787,6 +1795,8 @@ class Bomb extends Chill{
     shape2 = shapes.get("square.5");
     color2 = "#d55";
     xp = 2;
+    xHp = 0.01;
+    hp = 0.01;
     tick() {
         if(this.timer) {
             ++this.timer;
@@ -2552,6 +2562,11 @@ class SummonerClass extends Player{
             this.p += 1;
         }
     }
+    register(what) {
+        for(let pet of this.pets) {
+            pet.register(what);
+        }
+    }
     getPet() {
         this.pet = this.summon();
     }
@@ -2819,11 +2834,6 @@ class TheMagician extends SummonerClass{
         super.nextLevel();
         this.p = 0;
     }
-    register(what) {
-        for(let pet of this.pets) {
-            pet.register(what);
-        }
-    }
     move(rad, mult) {
         super.move(rad, mult);
     }
@@ -2968,9 +2978,202 @@ class TheReformed extends TheGunner{
     }
 }
 class TheLucky extends TheGunner{
+    desc = [
+        "Happy go lucky gunner",
+        "Skill: Machine gun",
+        "Ability: Evade"
+    ];
+    cols = [
+        "#ff0",
+        "#ffa",
+        "#ffa"
+    ];
+    color = "#ff0";
+    color2 = "#ffa";
+    constructor() {
+        super();
+        // this.spd *= 4;
+        // this.friction *= .7;
+    }
+    skill(rad) {
+        if(!this.lastShot) {
+            this.team = TEAM.GOOD;
+            this.hits = TEAM.BAD;
+            this.coll = TEAM.BAD;
+            rad += (srand() - .5) * PI * .5;
+            var blob = new Bullet(this, rad);
+            blob.time = 10;
+            blob.atk = .1;
+            // blob.m = 1;
+            blob.hp = 0.1;
+            blob.team = TEAM.BULLET + TEAM.ALLY;
+            blob.coll = TEAM.BULLET;
+            blob.nocoll = TEAM.ALLY;
+            enemies.push(blob);
+            // this.lastShot = 1;
+        }
+    }
+    tickSkill() {
+        if(this.lastSkill > 25) {
+            this.r = this.lastSkill * .5;
+            this.team = 0;
+            this.hits = 0;
+            this.coll = 0;
+        }else{
+            this.team = TEAM.GOOD;
+            this.hits = TEAM.BAD;
+            this.coll = TEAM.BAD;
+        }
+    }
+    get alpha() {
+        if(this.lastSkill > 25) return .4;
+        return super.alpha;
+    }
+    ability(key, mrad, srad) {
+        if(!this.lastSkill) {
+            var {spd} = this;
+            this.spd *= 40;
+            if(!isNaN(mrad)) {
+                this.move(mrad);
+            }
+            this.spd = spd;
+            this.lastSkill = 40;
+        }
+    }
+}
+class Droid extends Turret{
+    range = 12;
+    mo = PI/8;
+    good = true;
+    register(what) {
+        if(!(what.hits & this.team)) return;
+        var dis = Entity.distance(this, what);
+        if(!this.player) {
+            this.player = what;
+            this.dis = dis;
+        }else if(dis < this.dis) {
+            this.player = what;
+            this.dis = dis;
+        }
+    }
+    shoot(rad) {
+        if(!this.lastShot && this.alive) {
+            var blob = new Bullet(this, rad);
+            // blob.team = TEAM.BULLET;
+            // blob.coll = TEAM.BULLET;
+            blob.nocoll = TEAM.GOOD;
+            blob.spd *= 1.2;
+            blob.time = 10;
+            blob.atk = .4;
+            blob.m = 2;
+            enemies.push(blob);
+            this.lastShot = 10;
+            return blob;
+        }
+    }
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) return;
+        if(this.lastShot) --this.lastShot;
+        if(Entity.distance(this, player) < this.range) {
+            var obj = {...player};
+            obj.x += obj.vx * 7;
+            obj.y += obj.vy * 7;
+            var rad = Entity.radian(obj, this);
+            var dis = rDis(this.r - PI/2, rad);
+            // this.r = rad + PI/2;
+            var m = this.mo;
+            if(abs(dis) < m) {
+                this.r = rad + PI/2;
+                this.shoot(this.r - PI/2);
+            }else this.r += sign(dis) * m;
+        }
+    }
+    m = 0.01;
+}
+class Bot extends Droid{
+    tick() {
+        if(this.lastShot) --this.lastShot;
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) return;
+
+        this.moveTo(player, (30 - this.lastShot)/20);
+        if(Entity.distance(this, player) < 5) {
+            var rad = Entity.radian(player, this);
+            this.shoot(rad);
+        }
+        this.r = atan(this.vy, this.vx);
+    }
+    ro = PI * .5;
+    constructor() {
+        super();
+        this.spd *= .5;
+    }
+    shape = shapes.get("trapoid-2");
 }
 class TheMaster extends SummonerClass{
+    desc = [
+        "Tower defense?",
+        "Let your bots fight for you",
+        "Skill: Summon",
+        "Ability: Switch summon",
+        "Passive: Exploding shield"
+    ];
+    cols = [
+        "#aaa",
+        "#aaa",
+        "#fff",
+        "#fff"
+    ];
+    attacked(obj) {
+        if(this.shield) {
+            this.shield = false;
+            this.noHit = 10;
+            this.color2 = "#0000";
 
+            var u = PI2/8;
+            for(let i = 0; i < PI2; i += u) {
+                var blob = new Bullet(this, i);
+                blob.coll = 0;
+                blob.time = 30;
+                blob.spd /= 2;
+                
+                enemies.push(blob);
+            }
+        }else if(!this.noHit) {
+            super.attacked(obj);
+        }
+    }
+    noHit = 10;
+    ro = PI * .5;
+    summons = [Droid, Bot];
+    color = "#fff";
+    color2 = "#aaa";
+    shape = shapes.get("trapoid");
+    shape2 = shapes.get("trapoid");
+    onXp() {
+        var pets = floor(this.p/5);
+        if(pets < (10 - this.alive.length)) {
+            this.p += 0.1;
+        }
+    }
+    rec = 0.1;
+    tickSkill() {
+        for(let blob of this.alive) {
+            blob.alive = true;
+        }
+        if(this.noHit) --this.noHit;
+    }
+    nextLevel() {
+        for(let blob of this.alive) {
+            blob.dead = DEAD;
+        }
+        this.shield = true;
+        this.color2 = "#aaa";
+        this.p = 10;
+    }
 }
 var main;
 var bosses = new Set;
@@ -2982,14 +3185,32 @@ var game = {
     width: 0,
     height: 0
 };
-var saveData = JSON.parse(localStorage.getItem("data")) || {};
+var saveData;
+try{
+    saveData = JSON.parse(localStorage.getItem("data")) || {};
+}catch(err) {
+    saveData = {};
+    failedSave = true
+    console.log("failed to load savedata");
+}
 // saveData = {
 //     levelE: 13,
 //     level: 13
 // }
-saveData.save = function() {
+var failedSave;
+if(failedSave && Enviroment == env.SOLOLEARN) {
+    saveData = {
+        levelE: 20,
+        level: 20
+    };
+}
+saveData.save = function() {try{
     localStorage.setItem("data", JSON.stringify(saveData));
-};
+}catch(err) {
+    if(!failedSave) {
+        console.log("failed to save savedata");
+    }
+}};
 onload = () => {
     try{
     document.body.appendChild(canvas);
@@ -3149,7 +3370,7 @@ onload = () => {
             mainMenu.active = false;
             level = selLvl + 1;
             restart();
-            canvas.requestFullscreen();
+            canvas.requestFullscreen().catch(a => 0);
         }
         for(let touch of touches.all) {
             if(touch.end) touch.used = true;
@@ -3176,6 +3397,12 @@ onload = () => {
         }
         if(saveData.level >= 15) {
             players.push(new TheReformed);
+        }
+        if(saveData.level >= 20) {
+            players.push(new TheLucky);
+        }
+        if(saveData.levelE >= 20) {
+            players.push(new TheMaster);
         }
     };
 }
@@ -3343,6 +3570,8 @@ function levelName(level) {
             }
             }catch(err) {
                 console.error(err);
+                console.log(err.stack);
+                break;
             }
         }
     }
@@ -3532,10 +3761,10 @@ function nextLevel() {
             }
         break;
         case 20:
-            var blob = new Squish();
+            var blob = new Squish;
             blob.spawn();
-            bosses.add(blob);
-            enemies.push(blob);
+            var spawn = new Spawner(blob);
+            enemies.push(spawn);
         break;
         default:
             --level;
