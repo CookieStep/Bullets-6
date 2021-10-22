@@ -65,9 +65,9 @@ var canvas = document.createElement("canvas"),
     ontouchmove = e => [...e.changedTouches].forEach(touchmove);
     ontouchend = e => [...e.changedTouches].forEach(touchend);
     ontouchcancel = (e) => [...e.changedTouches].forEach(touchcancel);
-    onmousedown = e => touchstart(e);
-    onmousemove = e => touches.has(undefined) && touchmove(e);
-    onmouseup = e => touchend(e);
+    // onmousedown = e => touchstart(e);
+    // onmousemove = e => touches.has(undefined) && touchmove(e);
+    // onmouseup = e => touchend(e);
 }
 {
     var showButtons;
@@ -2722,7 +2722,7 @@ onload = () => {
     /**@param {Button} button*/
     function buttonClick(button) {
         for(let touch of touches.all) {
-            if(touch.up && !touch.used && button.includes(touch) && (Date.now() - ms * 3) > touch.start) {
+            if(touch.up && !touch.used && button.includes(touch)) {
                 touch.used = true;
                 return true;
             }
