@@ -2967,6 +2967,11 @@ class TheReformed extends TheGunner{
         ++this.time;
     }
 }
+class TheLucky extends TheGunner{
+}
+class TheMaster extends SummonerClass{
+
+}
 var main;
 var bosses = new Set;
 var enemies;
@@ -3321,7 +3326,7 @@ function levelName(level) {
             leaveButton.draw("red");
             if(keys.use("Backspace") || buttonClick(leaveButton)) {
                 mainMenu.load();
-            }else if(keys.use("Space") || buttonClick(restartButton)) {
+            }else if((main.dead && keys.use("Space")) || buttonClick(restartButton)) {
                 restart();
             }
 
