@@ -2722,7 +2722,7 @@ onload = () => {
     /**@param {Button} button*/
     function buttonClick(button) {
         for(let touch of touches.all) {
-            if(touch.up && !touch.used && button.includes(touch)) {
+            if(touch.up && !touch.used && button.includes(touch) && (Date.now() - ms * 3) > touch.start) {
                 touch.used = true;
                 return true;
             }
