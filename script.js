@@ -2075,6 +2075,98 @@ class MafiaCharger extends Mafia{
     spd = 0.3;
     friction = 0.99;
 }
+class MiniDash extends Dasher{
+    spawn() {
+        var d = 10;
+        var I = this;
+        do{
+            this.x = random(game.w - this.s);
+            this.y = random(game.h - this.s);
+        }while(close());
+        function close() {
+            for(let blob of enemies) {
+                if(blob instanceof Player && Entity.distance(blob, I) < d) {
+                    return true;
+                }
+                if(Entity.hitTest(I, blob) && Entity.isTouching(blob, I)) {
+                    return true;
+                }
+            }
+        }
+        return this;
+    }
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = main;
+        var m = this.hp/this.xHp;
+        switch(this.phase) {
+            case 0:
+                this.spd = expert? .12: .075;
+                this.moveTo(player);
+                this.r = atan(this.vy, this.vx);
+                // this.nocoll = this.hits;
+                this.m = 10
+                if(Entity.distance(this, player) < 5) {
+                    this.phase = 1;
+                    this.flash = 0;
+                }
+            break;
+            case 1:
+                ++this.flash;
+                this.m = 10
+                // this.nocoll = this.hits;
+                this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
+                if(expert || this.flash < 30) {
+                    this.r = Entity.radian(player, this);
+                }
+                if(this.flash >= 10) {
+                    this.phase = 2;
+                    this.spd = 0.3;
+                    this.timer = 0;
+                }
+            break;
+            case 2:
+                this.timer++;
+                var b = 5;
+                var c = expert? 0: (5 * m);
+                this.m = 0.1;
+                // this.nocoll = 0;
+                if(this.timer < b) {
+                    if(expert) this.moveTo(player);
+                    else this.move(this.r);
+                    // this.move(this.r);
+                }else if(this.timer < b + c) {
+                    var a = this.timer - b;
+                    this.color = `hsl(0, ${a * 2}%, 50%)`;
+                }else{
+                    // if(expert) {
+                    //     var u = PI2/8;
+                    //     for(let i = 0; i < PI2; i += u) {
+                    //         var blob = new Bullet(this, i);
+                    //         blob.color = "#f00";
+                    //         // blob.coll = 0;
+                    //         blob.time = 30;
+                    //         blob.spd = 0.5;
+                    //         // blob.s *= 2;
+                    //         enemies.push(blob);
+                    //     }
+                    // }
+                    this.phase = 0;
+                    this.color = "#f00";
+                }
+                this.r = atan(this.vy, this.vx);
+            break;
+        }
+    }
+    xHp = 1;
+    hp  = 1;
+    team = TEAM.BAD + TEAM.ENEMY;
+    hits = TEAM.GOOD;
+    coll = TEAM.ENEMY;
+    s = 1;
+    mini = true;
+}
 class Player extends Entity{
     constructor() {
         super();
@@ -2214,99 +2306,21 @@ class Player extends Entity{
     hits = TEAM.BAD;
     coll = TEAM.BAD;
 }
-class MiniDash extends Dasher{
-    spawn() {
-        var d = 10;
-        var I = this;
-        do{
-            this.x = random(game.w - this.s);
-            this.y = random(game.h - this.s);
-        }while(close());
-        function close() {
-            for(let blob of enemies) {
-                if(blob instanceof Player && Entity.distance(blob, I) < d) {
-                    return true;
-                }
-                if(Entity.hitTest(I, blob) && Entity.isTouching(blob, I)) {
-                    return true;
-                }
-            }
-        }
-        return this;
-    }
-    tick() {
-        var {player} = this;
-        if(player && player.dead) delete this.player;
-        if(!player) player = main;
-        var m = this.hp/this.xHp;
-        switch(this.phase) {
-            case 0:
-                this.spd = expert? .12: .075;
-                this.moveTo(player);
-                this.r = atan(this.vy, this.vx);
-                // this.nocoll = this.hits;
-                this.m = 10
-                if(Entity.distance(this, player) < 5) {
-                    this.phase = 1;
-                    this.flash = 0;
-                }
-            break;
-            case 1:
-                ++this.flash;
-                this.m = 10
-                // this.nocoll = this.hits;
-                this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
-                if(expert || this.flash < 30) {
-                    this.r = Entity.radian(player, this);
-                }
-                if(this.flash >= 10) {
-                    this.phase = 2;
-                    this.spd = 0.3;
-                    this.timer = 0;
-                }
-            break;
-            case 2:
-                this.timer++;
-                var b = 5;
-                var c = expert? 0: (5 * m);
-                this.m = 0.1;
-                // this.nocoll = 0;
-                if(this.timer < b) {
-                    if(expert) this.moveTo(player);
-                    else this.move(this.r);
-                    // this.move(this.r);
-                }else if(this.timer < b + c) {
-                    var a = this.timer - b;
-                    this.color = `hsl(0, ${a * 2}%, 50%)`;
-                }else{
-                    // if(expert) {
-                    //     var u = PI2/8;
-                    //     for(let i = 0; i < PI2; i += u) {
-                    //         var blob = new Bullet(this, i);
-                    //         blob.color = "#f00";
-                    //         // blob.coll = 0;
-                    //         blob.time = 30;
-                    //         blob.spd = 0.5;
-                    //         // blob.s *= 2;
-                    //         enemies.push(blob);
-                    //     }
-                    // }
-                    this.phase = 0;
-                    this.color = "#f00";
-                }
-                this.r = atan(this.vy, this.vx);
-            break;
-        }
-    }
-    xHp = 1;
-    hp  = 1;
-    team = TEAM.BAD + TEAM.ENEMY;
-    hits = TEAM.GOOD;
-    coll = TEAM.ENEMY;
-    s = 1;
-    mini = true;
-}
 class TheGunner extends Player{
+    desc = [
+        "Well rounded shooter",
+        "Skill: Shoot",
+        "Ability: Dodge"
+    ];
+    cols = [
+        "#55f",
+        "#aaf",
+        "#aaf"
+    ];
+    color = "#55f";
+    shape = shapes.get("square.4");
+    color2 = "#aaf";
+    shape2 = shapes.get("square.4");
     get alpha() {
         if(this.lastSkill > 40) return .4;
         return super.alpha;
@@ -2343,12 +2357,24 @@ class TheGunner extends Player{
             this.lastSkill = 50;
         }
     }
-    color = "#55f";
-    shape = shapes.get("square.4");
-    color2 = "#aaf";
-    shape2 = shapes.get("square.4");
 }
 class TheDasher extends Player{
+    desc = [
+        "Charge into enemies and explode!",
+        "Just don't get caught unprepared",
+        "Skill: Ram",
+        "Ability: Explode"
+    ];
+    cols = [
+        "#f70",
+        "#f70",
+        "#fff",
+        "#fff"
+    ]
+    shape2 = shapes.get("arrow-box");
+    color = "#f70";
+    color2 = "#fff";
+    color3 = "#a72";
     // atk = 2;
     hit(what) {
         super.hit(what);
@@ -2356,17 +2382,12 @@ class TheDasher extends Player{
         //     this.hitd += 5;
         // }
         if(this.god && what.team & TEAM.BULLET) {
-            what.team = TEAM.BULLET;
+            what.team = this.team;
             what.hits = this.hits;
-            what.coll = TEAM.BAD;
+            what.coll = this.coll;
             what.color = this.color;
             what.color2 = this.color2;
             what.color3 = this.color3;
-            what.spd = this.spd * 10;
-            what.m = 0;
-            what.hp = 0;
-            what.r += PI;
-            // what.dead = DEAD;
         }else if(what.hp <= 0 && this.god) {
             what.team = this.team;
             what.hits = this.hits;
@@ -2378,6 +2399,25 @@ class TheDasher extends Player{
             what.hit = this.hit;
             what.m = this.m;
             what.god = true;
+            
+            what.explode = () => {
+                var a = what.xp;
+                var o = random(PI);
+                for(let i = 0; i < a; i++) {
+                    var blob = new Xp;
+                    Xp.position(blob, i * PI2/a + o, what);
+                    enemies.push(blob);
+                }
+                var u = PI2/8;
+                for(let i = 0; i < PI2; i += u) {
+                    var blob = new Bullet(what, i);
+                    blob.hits = TEAM.BAD;
+                    blob.coll = 0;
+                    blob.time = 10;
+                    blob.spd /= 4;
+                    enemies.push(blob);
+                }
+            }
             // var {vx, vy} = this;
             // for(let enemy of enemies) {
             //     if(this.hits & enemy.team) {
@@ -2439,6 +2479,7 @@ class TheDasher extends Player{
             // this.color2 = "#fff";
             this.m = 1;
         }
+        if(this.lastAbility) --this.lastAbility;
         if(this.lastSkill <= this.hitd) {
             this.lastSkill = 0;
         }
@@ -2453,25 +2494,20 @@ class TheDasher extends Player{
             this.lastSkill = 30;
         }
     }
+    lastAbility = 0;
     ability(key, mrad, srad) {
-        if(!this.lastSkill) {
-            var {spd} = this;
-            this.spd *= 25;
-            if(!isNaN(mrad)) {
-                this.move(mrad);
-                this.hitd = 0;
-            }else{
-                this.spd = spd;
-                return;
+        if(!this.lastAbility) {
+            var u = PI/8;
+            for(let i = 0; i < PI2; i += u) {
+                var blob = new Bullet(this, i);
+                blob.coll = 0;
+                blob.time = 1;
+                blob.spd /= 2;
+                enemies.push(blob);
             }
-            this.spd = spd;
-            this.lastSkill = 20;
+            this.lastAbility = 50;
         }
     }
-    shape2 = shapes.get("arrow-box");
-    color = "#f70";
-    color2 = "#fff";
-    color3 = "#a72";
 }
 class Minion extends Brain{
     color = "#f5a";
@@ -2621,10 +2657,6 @@ class SummonerClass extends Player{
         this.p = 20;
     }
     p = 0;
-    color = "#b2f";
-    color2 = "#425";
-    shape = shapes.get("bullet");
-    shape2 = shapes.get("square.4");
     selected = 0;
     summons = [Mover];
     pets = [];
@@ -2667,6 +2699,30 @@ class Tracker extends Chill{
     m = 10;
 }
 class TheSummoner extends SummonerClass{
+    desc = [
+        "Distract the enemy to let your",
+        "summons destroy them, or hide",
+        "in a corner while your summons",
+        "distract your enemies and protect you",
+        "Skill: Summon",
+        "Ability: Switch summon",
+        "Passive: Standing still will cloak you",
+        "Passive: Moving will cloak your summons"
+    ];
+    cols = [
+        "#b2f",
+        "#b2f",
+        "#b2f",
+        "#b2f",
+        "#f82",
+        "#f82",
+        "#f82",
+        "#f82"
+    ]
+    color = "#b2f";
+    color2 = "#f82";
+    shape = shapes.get("bullet");
+    shape2 = shapes.get("square.4");
     summons = [Chill, Walker, Mover, Chaser];
     cloak = 0;
     tickSkill() {
@@ -2701,6 +2757,24 @@ class TheSummoner extends SummonerClass{
     }
 }
 class TheMagician extends SummonerClass{
+    desc = [
+        "Barage the enemy with your seemingly",
+        "endless barage of heat seeking magic missles",
+        "Skill: Fire missle",
+        "Ability: Release all missles",
+        "Passive: 1.2x speed",
+        "Passive: Standing still will recharge",
+        "your missles almost twice as fast"
+    ];
+    cols = [
+        "#5f5",
+        "#5f5",
+        "#cfc",
+        "#cfc",
+        "#cfc",
+        "#cfc",
+        "#cfc"
+    ]
     summons = [Tracker];
     color = "#5f5";
     color2 = "#cfc";
@@ -2784,6 +2858,26 @@ class TheMagician extends SummonerClass{
     p = 0;
 }
 class TheReformed extends TheGunner{
+    desc = [
+        "Get up and personal with this ex-mafia",
+        "member: high risk, high reward",
+        "Skill: Shotgun",
+        "Ability: Reload",
+        "Passive: 1.5x speed"
+    ];
+    cols = [
+        "#ffa",
+        "#ffa",
+        "#ff0",
+        "#f57",
+        "#ff0"
+    ];
+    shape = shapes.get("square");
+    shape2 = shapes.get("shades");
+    ishape = shapes.get("square.4")
+    color = "#ffa";
+    color2 = "#f57";
+    icolor = "#ff0";
     constructor() {
         super();
         this.spd *= 1.5;
@@ -2872,12 +2966,6 @@ class TheReformed extends TheGunner{
         this.r = 0;
         ++this.time;
     }
-    shape = shapes.get("square");
-    shape2 = shapes.get("shades");
-    ishape = shapes.get("square.4")
-    color = "#ffa";
-    color2 = "#f57";
-    icolor = "#ff0";
 }
 var main;
 var bosses = new Set;
@@ -2974,6 +3062,7 @@ onload = () => {
         levelButton.resize(x, y + h * .2, width, h);
         ctx.fillText(text, x, y + h);
         levelButton.draw("yellow");
+        var by = y;
         s *= scale;
         y += s/5;
         x -= s/5;
@@ -3003,6 +3092,22 @@ onload = () => {
             }
             nextButton.resize(x, y, s, s);
             nextButton.draw("green");
+        }
+        {
+            let main = players[plasel];
+            let desc = main.desc;
+            let cols = main.cols;
+            by += h * 1.5;
+            ctx.font = `${h * .5}px Arial`;
+            for(let i = 0; i < desc.length; i) {
+                let col = cols[i];
+                let line = desc[i++];
+                let y = by + h * 0.6 * i;
+                let {width} = ctx.measureText(line);
+                let x = (game.width - width)/2;
+                ctx.fillStyle = col;
+                ctx.fillText(line, x, y);
+            }
         }
         ctx.beginPath();
         touch = undefined;
@@ -3228,6 +3333,7 @@ function levelName(level) {
             
             if(!main.dead && arr.length == 0) {
                 main.nextLevel();
+                enemies = [main];
                 nextLevel();
             }
             }catch(err) {
