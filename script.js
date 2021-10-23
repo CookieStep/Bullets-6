@@ -96,6 +96,48 @@ var canvas = document.createElement("canvas"),
         }
     }
 }
+{
+    var gamepad;
+    addEventListener("gamepadconnected", ({gamepad: {index}}) => {
+        gamepad = index;
+    });
+}
+{
+    function Sound(src, volume=1) {
+        var sound = new Audio();
+        sound.volume = volume;
+
+        {
+            let source = document.createElement("source");
+            source.src = src;
+            sound.appendChild(source);
+
+            source = document.createElement("source");
+            source.src = "https://raw.githubusercontent.com/CookieStep/Bullets-6/main/" + src;
+            sound.appendChild(source);
+        }
+
+        this.play = () => {
+            sound.currentTime = 0;
+            sound.play();
+        }
+    }
+    var sounds = {
+        Shoot: new Sound("Shoot.wav", .2),
+        Wall: new Sound("Wall.wav", .3),
+        Hit: new Sound("Wall.wav"),
+        Dash: new Sound("Dash.wav", .1),
+        MachineGun: new Sound("MachineGun.wav", .05),
+        Magic: new Sound("Magic.wav"),
+        BigMagic: new Sound("BigMagic.wav"),
+        Reload: new Sound("Reload.wav"),
+        Smack: new Sound("Smack.wav"),
+        Shotgun: new Sound("Shotgun.wav"),
+        Summon: new Sound("Summon.wav"),
+        Explode: new Sound("Explode.wav", .2),
+        BotSummon: new Sound("BotSummon.wav")
+    }
+}
 var {
     cos, sin, 
     atan2: atan,
@@ -306,7 +348,7 @@ class Entity{
         for(let i = 0; i < a; i++) {
             var blob = new Xp;
             Xp.position(blob, i * PI2/a + o, this);
-            enemies.push(blob);
+            exp.push(blob);
         }
     }
     dead = 0;
@@ -320,7 +362,12 @@ class Entity{
         this.x += this.vx;
         this.y += this.vy;
         this.hitWall = this.screenlock();
+        if(this.hitWall && this.wallSound) {
+            sounds.Wall.play();
+        }
     }
+    wallSound = true;
+    hitSound = true;
     update() {
         this.movement();
         if(this.hp <= 0) {
@@ -463,6 +510,10 @@ class Entity{
         if(!this.god && !this.inv.has(enemy)) {
             this.inv.set(enemy, 10);
             if(atk) this.hp -= atk;
+            if(this.hitSound) {
+                if(this.hp > 0) sounds.Hit.play();
+                else if(!this.dead) sounds.Smack.play();
+            }
         }
     }
     screenlock() {
@@ -644,15 +695,19 @@ class Xp extends Entity{
         what.x = parent.x + ps/2 - what.s/2;
         what.y = parent.y + ps/2 - what.s/2;
     }
+    wallSound = false;
     s = .2;
     life = 0;
     moveTo2(enemy, mult) {
-        var obj = {...this};
-        obj.x -= this.vx * .05;
-        obj.y -= this.vy * .05;
-        obj.x += obj.vx * 2;
-        obj.y += obj.vy * 2;
-        this.move(Entity.radian(enemy, obj), mult);
+        var dis = Entity.distance(this, enemy);
+        var rad = Entity.radian(enemy, this);
+
+        var spd = dist(this.vx, this.vy);
+        var i = 0.1;
+        if(dis > spd + i) dis = spd + i;
+
+        this.vx = cos(rad) * dis;
+        this.vy = sin(rad) * dis;
     }
     explode() {};
     spd = 0.05;
@@ -699,11 +754,11 @@ class Xp extends Entity{
         if(!x) return;
         if(!ox) return;
         if(!oy) return;
-        var color = ctx.createLinearGradient(x, y, ox, oy);
-        this.color = this.color2 || `hsl(${this.hue}, ${this.sat}%, ${this.bri}%)`;
-        color.addColorStop(0, this.color);
-        color.addColorStop(1, this.color3 || `hsla(${this.hue - 10}, ${this.sat}%, ${this.bri}%, .2)`);
-        ctx.strokeStyle = color;
+        // var color = ctx.createLinearGradient(x, y, ox, oy);
+        // this.color = this.color2 || `hsl(${this.hue}, ${this.sat}%, ${this.bri}%)`;
+        // color.addColorStop(0, this.color);
+        // color.addColorStop(1, this.color3 || `hsla(${this.hue - 10}, ${this.sat}%, ${this.bri}%, .2)`);
+        ctx.strokeStyle = this.color = `hsl(${this.hue}, ${this.sat}%, ${this.bri}%)`;
         ctx.stroke();
         ctx.globalAlpha = 1;
         this.draw1();
@@ -937,6 +992,7 @@ class Bullet extends Mover{
         this.color2 = parent.color2;
         this.coll = parent.coll + TEAM.BULLET;
     }
+    hitSound = false;
     static position(what, rad, parent) {
         if(!parent) parent = what.parent;
         var s = what.s * .5;
@@ -1103,6 +1159,7 @@ class Dasher extends Mover{
                     this.phase = 2;
                     this.spd = 0.6;
                     this.timer = 0;
+                    sounds.Dash.play();
                 }
             break;
             case 2:
@@ -1130,6 +1187,7 @@ class Dasher extends Mover{
                             // blob.s *= 2;
                             enemies.push(blob);
                         }
+                        sounds.Explode.play();
                     }
                     this.phase = 0;
                     this.color = "#f00";
@@ -1146,7 +1204,7 @@ class Dasher extends Mover{
         for(let i = 0; i < a; i++) {
             var blob = new Xp;
             Xp.position(blob, i * PI2/a + o, this);
-            enemies.push(blob);
+            exp.push(blob);
         }
     }
     shape = shapes.get("square.4");
@@ -1180,7 +1238,7 @@ class Squish extends Enemy{
         for(let i = 0; i < a; i++) {
             var blob = new Xp;
             Xp.position(blob, i * PI2/a + o, this);
-            enemies.push(blob);
+            exp.push(blob);
         }
     }
     tick() {
@@ -1198,12 +1256,20 @@ class Squish extends Enemy{
                     this.r += random(.3);
                 }
                 var m = expert? 5: 15;
-                if(this.ticks % m == 0) {
+                var l = this.ticks % m;
+                if(l == 0) {
                     for(let i = 0; i < 2; i++) {
                         var blob = new Bullet(this, this.r + i * PI);
                         blob.m = 0.01;
                         enemies.push(blob);
                     }
+                    sounds.MachineGun.play();
+                }
+                if(l == 7) {
+                    sounds.MachineGun.play();
+                }
+                if(expert && l == 2) {
+                    sounds.MachineGun.play();
                 }
                 if(this.ticks == 50) {
                     this.color = "#f07";
@@ -1246,6 +1312,7 @@ class Squish extends Enemy{
                         if(bullet) bullet.m = 0.01;
                     } 
                     enemies.push(blob);
+                    sounds.BotSummon.play();
                 }
                 if(this.ticks == (expert? 50: 75)) {
                     this.phase = 3;
@@ -1263,6 +1330,7 @@ class Squish extends Enemy{
                         blob.vy = sin(rad) * .5;
                         enemies.push(blob);
                     }
+                    sounds.BotSummon.play();
                 }
             break;
             case 3:
@@ -1275,10 +1343,14 @@ class Squish extends Enemy{
                     this.ticks = 0;
                     this.spd = expert? 0.3: 0.15;
                     this.m = 0.1;
+                    sounds.Dash.play();
                 }
             break;
             case 4:
                 ++this.ticks;
+                if(this.ticks % 20 == 0) {
+                    sounds.Dash.play();
+                }
                 if(this.ticks % 20 < 10) {
                     this.move(this.r + p);
                 }else{
@@ -1323,6 +1395,7 @@ class Squish extends Enemy{
                         blob.vy = sin(rad) * .5;
                         enemies.push(blob);
                     }
+                    sounds.BotSummon.play();
                 }
             break;
         }
@@ -1365,7 +1438,7 @@ class Summoner extends Brain{
         for(let i = 0; i < a; i++) {
             var blob = new Xp;
             Xp.position(blob, i * PI2/a + o, this);
-            enemies.push(blob);
+            exp.push(blob);
         }
     }
     smartMove() {
@@ -1461,6 +1534,7 @@ class Summoner extends Brain{
                     blob.coll = 0;
                     blob.color = this.color;
                     enemies.push(blob);
+                    sounds.Summon.play();
                 }
                 if(this.toGoal(expert? .4: 1)) {
                     this.phase = 2;
@@ -1504,6 +1578,7 @@ class Summoner extends Brain{
                     blob.color = this.color;
                     blob.coll = 0;
                     enemies.push(blob);
+                    sounds.Summon.play();
                 }
                 if(expert) {
                     var a = this.timer % (v * 2);
@@ -1520,6 +1595,7 @@ class Summoner extends Brain{
                             blob.force = true;
                             blob.spd *= 1.2;
                             enemies.push(blob);
+                            sounds.Summon.play();
                         }
                     }
                 }
@@ -1548,6 +1624,7 @@ class Summoner extends Brain{
                     blob.color = this.color;
                     blob.coll = 0;
                     enemies.push(blob);
+                    sounds.Summon.play();
                 }
                 if(this.toGoal(expert? .4: 1)) {
                     this.phase = 6;
@@ -1571,6 +1648,7 @@ class Summoner extends Brain{
                     blob.color = this.color;
                     blob.coll = 0;
                     enemies.push(blob);
+                    sounds.Summon.play();
                 }
                 if(expert) {
                     var a = this.timer % (v * 2);
@@ -1587,6 +1665,7 @@ class Summoner extends Brain{
                             blob.force = true;
                             blob.spd *= 1.2;
                             enemies.push(blob);
+                            sounds.Summon.play();
                         }
                     }
                 }
@@ -1698,7 +1777,7 @@ class Spawner extends Point{
             SpawnDust.position(blob, rad, dis, this);
             blob.color2 = this.boss.color;
             blob.color3 = this.boss.color2;
-            enemies.push(blob);
+            exp.push(blob);
         }
     }
     draw() {
@@ -1784,6 +1863,7 @@ class Turret extends Chill{
             blob.time *= m;
             enemies.push(blob);
             this.lastShot = 40;
+            sounds.Shoot.play();
             return blob;
         }
     }
@@ -1823,7 +1903,8 @@ class Bomb extends Chill{
         super.explode();
 
         // if(expert && !this.boom) return;
-
+        
+        sounds.Explode.play();
         var u = PI2/8;
         for(let i = 0; i < PI2; i += u) {
             var blob = new Bullet(this, i);
@@ -1954,6 +2035,7 @@ class MafiaTurret extends Turret{
             blob.time = 10;
             enemies.push(blob);
             this.lastShot = 40;
+            sounds.Shotgun.play();
         }
     }
     shape = shapes.get("square.4");
@@ -2031,6 +2113,7 @@ class MafiaGunner extends Mafia{
             blob.time *= m;
             enemies.push(blob);
             this.lastShot = 50;
+            sounds.Shoot.play();
         }
     }
     draw3() {
@@ -2078,6 +2161,7 @@ class MafiaCharger extends Mafia{
             }
             if(dis < (expert? 7: 10)) {
                 this.moveTo(player);
+                sounds.Dash.play();
             }
         }
     }
@@ -2134,6 +2218,7 @@ class MiniDash extends Dasher{
                     this.phase = 2;
                     this.spd = 0.3;
                     this.timer = 0;
+                    sounds.Dash.play();
                 }
             break;
             case 2:
@@ -2176,6 +2261,12 @@ class MiniDash extends Dasher{
     coll = TEAM.ENEMY;
     s = 1;
     mini = true;
+}
+var deadzone = 0.1;
+var dead = (num, dual) => {
+    if(num < deadzone && (!dual || num > -deadzone)) return 0;
+    if(num > 1 - deadzone || (dual && num < deadzone - 1)) return sign(num);
+    return num / (1 - deadzone);
 }
 class Player extends Entity{
     constructor() {
@@ -2251,6 +2342,30 @@ class Player extends Entity{
 			ctx.stroke();
 		}
 	}
+    pad() {
+        var pads = navigator.getGamepads();
+        var pad = pads[gamepad];
+        
+        if(!pad) return;
+
+        var x = dead(pad.axes[0], 1);
+        var y = dead(pad.axes[1], 1);
+
+        var dis = dist(x, y);
+        var rad = atan(y, x);
+        if(dis > 1) dis = 1;
+        this.move(rad, dis);
+
+        var x = pad.axes[2];
+        var y = pad.axes[3];
+
+        var dis2 = dist(x, y);
+        var RT = dead(pad.buttons[7].value);
+        if(dis2 && RT) this.skill(atan(y, x));
+
+        var A = pad.buttons[0].value;
+        if(A) this.ability(1, dis? rad: dis, atan(y, x));
+    }
     onXp() {}
     nextLevel() {}
     explode() {
@@ -2260,7 +2375,7 @@ class Player extends Entity{
             var blob = new Xp;
             blob.spd = random()/15;
             Xp.position(blob, i * PI2/a + o, this);
-            enemies.push(blob);
+            exp.push(blob);
         }
     }
     xp = 0;
@@ -2295,6 +2410,7 @@ class Player extends Entity{
             this.ability(keys.get("ShiftRight"), mrad, srad);
             keys.set("ShiftRight", 2);
         }
+        this.pad();
         this.touchv2();
         if(this.lastShot) --this.lastShot;
         if(this.lastSkill) --this.lastSkill;
@@ -2354,6 +2470,7 @@ class TheGunner extends Player{
             this.coll = TEAM.BAD;
             enemies.push(new Bullet(this, rad));
             this.lastShot = 10;
+            sounds.Shoot.play();
         }
     }
     ability(key, mrad, srad) {
@@ -2363,6 +2480,7 @@ class TheGunner extends Player{
             if(!isNaN(mrad)) {
                 this.move(mrad);
             }
+            sounds.Dash.play();
             this.spd = spd;
             this.lastSkill = 50;
         }
@@ -2418,6 +2536,7 @@ class TheDasher extends Player{
                     Xp.position(blob, i * PI2/a + o, what);
                     enemies.push(blob);
                 }
+                sounds.Explode.play();
                 var u = PI2/8;
                 for(let i = 0; i < PI2; i += u) {
                     var blob = new Bullet(what, i);
@@ -2502,6 +2621,7 @@ class TheDasher extends Player{
             this.hitd = 0;
             this.spd = spd;
             this.lastSkill = 30;
+            sounds.Dash.play();
         }
     }
     lastAbility = 0;
@@ -2515,6 +2635,7 @@ class TheDasher extends Player{
                 blob.spd /= 2;
                 enemies.push(blob);
             }
+            sounds.Explode.play();
             this.lastAbility = 50;
         }
     }
@@ -2663,6 +2784,7 @@ class SummonerClass extends Player{
             blob.hp = 1;
             this.p -= 5;
             this.lastShot = 7;
+            this.summonSound?.play();
         }
     }
     nextLevel() {
@@ -2738,6 +2860,7 @@ class TheSummoner extends SummonerClass{
     color2 = "#f82";
     shape = shapes.get("bullet");
     shape2 = shapes.get("square.4");
+    summonSound = sounds.Summon;
     summons = [Chill, Walker, Mover, Chaser];
     cloak = 0;
     tickSkill() {
@@ -2854,6 +2977,7 @@ class TheMagician extends SummonerClass{
             blob.hp = 1;
             this.p -= 5;
             this.lastShot = 5;
+            sounds.Magic.play();
         }
     }
     ability() {
@@ -2863,6 +2987,8 @@ class TheMagician extends SummonerClass{
             this.p -= 5;
             pet.hp = 1;
         }
+        if(this.pets.length == 1) sounds.Magic.play();
+        else if(this.pets.length) sounds.BigMagic.play();
         this.pets = [];
     }
     p = 0;
@@ -2907,12 +3033,13 @@ class TheReformed extends TheGunner{
                 blob.time = 10;
                 blob.atk = .25;
                 enemies.push(blob);
-                this.lastShot = 10;
             }
+            this.lastShot = 10;
+            sounds.Shotgun.play();
         }
     }
     nextLevel() {
-        this.bullets = 10;
+        this.bullets = 5;
     }
     ability(key) {
         if(key == 1 && this.bullets != this.max) {
@@ -2925,13 +3052,14 @@ class TheReformed extends TheGunner{
                 this.reloading = false;
             }else{
                 this.bullets += 1;
-                this.lastShot = 5;
+                this.lastShot = 10;
+                sounds.Reload.play();
             }
         }
     }
     
     bullets = 0;
-    max = 20;
+    max = 10;
     time = 0;
     draw() {
         super.draw();
@@ -3011,6 +3139,7 @@ class TheLucky extends TheGunner{
             blob.coll = TEAM.BULLET;
             blob.nocoll = TEAM.ALLY;
             enemies.push(blob);
+            sounds.MachineGun.play();
             // this.lastShot = 1;
         }
     }
@@ -3069,6 +3198,7 @@ class Droid extends Turret{
             blob.m = 2;
             enemies.push(blob);
             this.lastShot = 10;
+            sounds.Shoot.play();
             return blob;
         }
     }
@@ -3128,6 +3258,7 @@ class TheMaster extends SummonerClass{
         "#fff",
         "#fff"
     ];
+    summonSound = sounds.BotSummon;
     attacked(obj) {
         if(this.shield) {
             this.shield = false;
@@ -3179,6 +3310,7 @@ class TheMaster extends SummonerClass{
 var main;
 var bosses = new Set;
 var enemies;
+var exp;
 // var bullets;
 var scale = 40;
 const sf = 1/25;
@@ -3381,6 +3513,7 @@ onload = () => {
         mainMenu.load();
         mainMenu.active = false;
         main = players[plasel];
+        exp = [];
     }
     mainMenu.load = () => {
         mainMenu.active = true;
@@ -3413,6 +3546,7 @@ function restart() {
     score = 0;
     mainMenu.spawn();
     enemies = [main];
+    if(!exp) exp = [];
     if(level) level -= 1;
     else level = 0;
 }
@@ -3497,10 +3631,14 @@ function levelName(level) {
                 ctx.strokeStyle = blob.color;
                 ctx.fillStyle = blob.color2 || blob.color;
                 ctx.lineWidth = l;
-                ctx.fillRect(x, y, w * (blob.hp/blob.xHp), h);
+                var hp = blob.hp;
+                if(hp < 0) hp = 0;
+                ctx.fillRect(x, y, w * (hp/blob.xHp), h);
                 if(blob.hp2) {
+                    var hp = blob.hp2;
+                    if(hp < 0) hp = 0;
                     ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
-                    ctx.fillRect(x, y, w * (blob.hp2/blob.xHp), h);
+                    ctx.fillRect(x, y, w * (hp/blob.xHp), h);
                 }
                 ctx.strokeRect(x, y, w, h);
                 var s = 1 + 5/scale;
@@ -3510,6 +3648,15 @@ function levelName(level) {
                 }
                 ++i;
             });
+            var nxp = [];
+            for(let xp of exp) {
+                xp.update();
+                xp.draw();
+                if(xp.dead < DEAD) {
+                    nxp.push(xp);
+                }
+            }
+            exp = nxp;
             // main.update();
             // main.draw();
             for(let i = 0; i < enemies.length; i++) {
@@ -3524,7 +3671,12 @@ function levelName(level) {
                     var hits = Entity.hitTest(blob, them);
                     if((coll || hits) && Entity.isTouching(blob, them)) {
                         if(blob.inv.has(them) || them.inv.has(blob)) coll = false;
-                        if(coll) Entity.collide(blob, them);
+                        if(coll) {
+                            Entity.collide(blob, them);
+                            // if(blob.vx || blob.vy || them.vx || them.vy) {
+                            //     sounds.Wall.play();
+                            // }
+                        }
                         if(hits) {
                             blob.hit(them);
                             them.hit(blob);
@@ -3561,7 +3713,7 @@ function levelName(level) {
             if(keys.use("Enter")) console.log(enemies);
 
             var arr = enemies.filter(blob => {
-                return (blob.team & TEAM.BAD) || (blob instanceof Xp);
+                return (blob.team & TEAM.BAD);
             });
             
             if(!main.dead && arr.length == 0) {
