@@ -3274,6 +3274,7 @@ class TheMaster extends SummonerClass{
                 
                 enemies.push(blob);
             }
+            sounds.Explode.play();
         }else if(!this.noHit) {
             super.attacked(obj);
         }
