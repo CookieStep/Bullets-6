@@ -2372,11 +2372,29 @@ class Player extends Entity{
         var y = pad.axes[3];
 
         var dis2 = dist(x, y);
+
+        var mx = (this.x + this.s * .5) * scale;
+        var my = (this.y + this.s * .5) * scale;
+
+        ctx.lineWidth = scale * .25;
+        ctx.beginPath();
+        ctx.moveTo(mx, my);
+        ctx.lineTo(mx + x * scale * 1.5, my + y * scale * 1.5);
+
         var RT = dead(pad.buttons[7].value);
-        if(dis2 && RT) this.skill(atan(y, x));
+        if(dis2 && RT) {
+            this.skill(atan(y, x));
+            ctx.strokeStyle = this.color2;
+        }else ctx.strokeStyle = this.color;
+        ctx.stroke();        
 
         var A = pad.buttons[0].value;
-        if(A) this.ability(1, dis? rad: dis, atan(y, x));
+        var LT = dead(pad.buttons[6].value);
+        if(A || LT) {
+            if(this.ab) this.ab = 3;
+            else this.ab = 1;
+            this.ability(this.ab, dis? rad: dis, atan(y, x));
+        }else this.ab = 0;
     }
     onXp() {}
     nextLevel() {}
@@ -3521,6 +3539,14 @@ onload = () => {
         for(let touch of touches.all) {
             if(touch.end) touch.used = true;
         }
+        if(keys.use("Escape") && (keys.has("ControlLeft"))) {
+            keys.clear();
+            if(alert("Are you sure you want to reset?")) {
+                saveData.level = 0;
+                saveData.levelE = 0;
+                saveData.save();
+            }
+        }
     }
     mainMenu.spawn = () => {
         mainMenu.load();
@@ -3717,9 +3743,13 @@ function levelName(level) {
 
             leaveButton.resize(0, 0, len, len);
             leaveButton.draw("red");
-            if(keys.use("Backspace") || buttonClick(leaveButton)) {
+            var pad = navigator.getGamepads()[gamepad];
+            var A_button = pad?.buttons[0].value;
+            var B_button = pad?.buttons[1].value;
+            var Y_button = pad?.buttons[3].value;
+            if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
-            }else if((main.dead && keys.use("Space")) || buttonClick(restartButton)) {
+            }else if((main.dead && (keys.use("Space") || A_button)) || buttonClick(restartButton) || Y_button) {
                 restart();
             }
 
