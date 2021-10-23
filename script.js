@@ -117,12 +117,23 @@ var canvas = document.createElement("canvas"),
             sound.appendChild(source);
         }
 
+        this.editVolume = (vol) => {
+            sound.volume = volume * vol;
+        }
         this.play = () => {
             sound.currentTime = 0;
             sound.play();
         }
     }
     var sounds = {
+        editVolume(vol) {
+            for(let key in this) {
+                var sound = this[key];
+                if(sound instanceof Sound) {
+                    sound.editVolume(vol);
+                }
+            }
+        },
         Shoot: new Sound("Shoot.wav", .2),
         Wall: new Sound("Wall.wav", .3),
         Hit: new Sound("Wall.wav"),
@@ -138,6 +149,7 @@ var canvas = document.createElement("canvas"),
         BotSummon: new Sound("BotSummon.wav")
     }
 }
+var volumeLevel = 10;
 var {
     cos, sin, 
     atan2: atan,
@@ -3712,6 +3724,16 @@ function levelName(level) {
             }
 
             if(keys.use("Enter")) console.log(enemies);
+            if(keys.use("Minus")) {
+                --volumeLevel;
+                if(volumeLevel < 0) volumeLevel = 0;
+                sounds.editVolume(volumeLevel * .1);
+            }
+            if(keys.use("Equal")) {
+                ++volumeLevel;
+                if(volumeLevel > 10) volumeLevel = 10;
+                sounds.editVolume(volumeLevel * .1);
+            }
 
             var arr = enemies.filter(blob => {
                 return (blob.team & TEAM.BAD);
