@@ -2486,6 +2486,9 @@ class Player extends Entity{
             if(keys.has("ShiftRight")) {
                 this.ability(keys.get("ShiftRight"), mrad, srad);
                 keys.set("ShiftRight", 2);
+            }else if(keys.has("Space")) {
+                this.ability(keys.get("Space"), mrad, srad);
+                keys.set("Space", 2);
             }
             this.touchv2();
         }
@@ -3338,24 +3341,120 @@ class Droid extends Turret{
     m = 0.01;
 }
 class Bot extends Droid{
+    constructor() {
+        super();
+        this.brainPoints = [];
+        this.rad = random(PI2);
+        this.spd *= .5;
+    }
+    brainMove() {
+        var lines = [];
+        var max;
+        var add = (PI * 2)/64;
+        for(let a = 0; a < PI * 2; a += add) {
+            var num = 0;
+            for(let [rad, pow] of this.brainPoints) {
+                let n = pow < 0; //iaNegative?
+                num += abs(((cos(a - rad) + 1)/2) ** (n? 2: .2)) * pow;
+            }
+            if(isNaN(max) || num > max) {
+                max = num;
+            }
+            lines.push([a, num]);
+        }
+        var [rad] = randomOf(lines.filter(([a, num]) => num == max));
+        max = abs(max);
+
+        this.rad = rad;
+
+        this.move(rad, max);
+        this.crad = rad;
+        this.cmax = max;
+        this.lines = lines;
+        this.brainPoints = [];
+    }
+    wander = 1;
+    follow() {
+        this.rad += (srand() - .5)/4;
+        this.brainPoints.push([this.rad, this.wander]);
+        var lx = this.x + this.s;
+        var ly = this.y + this.s;
+
+        var d = 10;
+        var p = 15;
+
+        if(this.x < d) {
+            var n = (this.x - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI, -n]);
+        }
+        if(lx > game.w - d) {
+            var dis = game.w - lx;
+            var n = (dis - d)/-d;
+            n **= p;
+            this.brainPoints.push([0, -n]);
+        }
+        if(this.y < d) {
+            var n = (this.y - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI * 3/2, -n]);
+        }
+        if(ly > game.h - d) {
+            var dis = game.h - ly;
+            var n = (dis - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI/2, -n]);
+        }
+        this.brainMove();
+    }
     tick() {
+        this.follow();
+        this.r = atan(this.vy, this.vx);
         if(this.lastShot) --this.lastShot;
         var {player} = this;
         if(player && player.dead) delete this.player;
         if(!player) return;
 
-        this.moveTo(player, (30 - this.lastShot)/20);
         if(Entity.distance(this, player) < 5) {
             var rad = Entity.radian(player, this);
             this.shoot(rad);
         }
-        this.r = atan(this.vy, this.vx);
+    }
+    register(enemy) {
+        // if(enemy instanceof Chaser) return;
+        // if(enemy instanceof Bullet) return;
+        super.register(enemy);
+        // if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team)) {
+        //     var dis = Entity.distance(this, enemy);
+        //     var d = 10;
+        //     if(dis < d) {
+        //         var n = (dis - d)/-d;
+        //         var rad = Entity.radian(enemy, this);
+        //         n **= 1;
+        //         this.brainPoints.push([rad, n]);
+        //     }
+        // }else{//Run away
+            // var dis = Entity.distance(this, enemy);
+            // var d = 1;
+            // if(dis < d) {
+            //     var n = (dis - d)/-d;
+            //     var rad = Entity.radian(this, enemy);
+            //     n **= .5;
+            //     this.brainPoints.push([rad, n * 2]);
+            // }
+        // }
+        if(enemy.team & this.team && !(enemy.team & TEAM.BULLET)) {//Run away
+            var dis = Entity.distance(this, enemy);
+            var d = 7;
+            if(dis < d) {
+                var n = (dis - d)/-d;
+                var rad = Entity.radian(this, enemy);
+                n **= 3;
+                this.brainPoints.push([rad, n * 2]);
+            }
+        }
     }
     ro = PI * .5;
-    constructor() {
-        super();
-        this.spd *= .5;
-    }
     shape = shapes.get("trapoid-2");
 }
 class TheMaster extends SummonerClass{
@@ -3363,8 +3462,7 @@ class TheMaster extends SummonerClass{
         "Tower defense?",
         "Let your bots fight for you",
         "Skill: Summon",
-        "Ability: Switch summon",
-        "Passive: Exploding shield"
+        "Ability: Switch summon"
     ];
     cols = [
         "#aaa",
@@ -3373,26 +3471,26 @@ class TheMaster extends SummonerClass{
         "#fff"
     ];
     summonSound = sounds.BotSummon;
-    attacked(obj) {
-        if(this.shield) {
-            this.shield = false;
-            this.noHit = 10;
-            this.color2 = "#0000";
+    // attacked(obj) {
+    //     if(this.shield) {
+    //         this.shield = false;
+    //         this.noHit = 10;
+    //         this.color2 = "#0000";
 
-            var u = PI2/8;
-            for(let i = 0; i < PI2; i += u) {
-                var blob = new Bullet(this, i);
-                blob.coll = 0;
-                blob.time = 30;
-                blob.spd /= 2;
+    //         var u = PI2/8;
+    //         for(let i = 0; i < PI2; i += u) {
+    //             var blob = new Bullet(this, i);
+    //             blob.coll = 0;
+    //             blob.time = 30;
+    //             blob.spd /= 2;
                 
-                enemies.push(blob);
-            }
-            sounds.Explode.play();
-        }else if(!this.noHit) {
-            super.attacked(obj);
-        }
-    }
+    //             enemies.push(blob);
+    //         }
+    //         sounds.Explode.play();
+    //     }else if(!this.noHit) {
+    //         super.attacked(obj);
+    //     }
+    // }
     noHit = 10;
     ro = PI * .5;
     summons = [Droid, Bot];
