@@ -2353,7 +2353,7 @@ class Player extends Entity{
                 this.mrad = mrad;
             }
 			this.touch = touch;
-            if(inBattle) touch.used = true;
+            if(inBattle && !Survival) touch.used = true;
 			ctx.strokeStyle = inside? this.color: this.color2;
 			ctx.beginPath();
 			ctx.lineWidth = scale * .125;
@@ -2491,9 +2491,6 @@ class Player extends Entity{
             if(keys.has("ShiftRight")) {
                 this.ability(keys.get("ShiftRight"), mrad, srad);
                 keys.set("ShiftRight", 2);
-            }else if(keys.has("Space")) {
-                this.ability(keys.get("Space"), mrad, srad);
-                keys.set("Space", 2);
             }
             this.touchv2();
         }
@@ -4063,11 +4060,11 @@ function levelName(level) {
             ctx.fillStyle = "#ff0";
             ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * 2);
 
-            if(Survival && arr.length == 0 && keys.use("Space")) {
+            if(Survival && arr.length == 0 && (keys.use("Space") || A_button || buttonClick(restartButton))) {
                 timeLeft = 0;
             }
             
-            if(!allDead && (Surivial? timeLeft <= 0: arr.length == 0)) {
+            if(!allDead && (Survival? timeLeft <= 0: arr.length == 0)) {
                 TIME = 0;
                 if(!Survival) {
                     main.nextLevel();
