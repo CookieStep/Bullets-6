@@ -1,6 +1,8 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
+//LLM
+
 //https://www.beepbox.co/2_3/#6n31s6kbl00e0Btbm0a7g0Bjbi0r1o3210T0w0f2d1c0h0v2T0w3f1d1c0h0v0T0w1f1d1c0h0v0T2w1d1v2b0000d3g0018i4x8310c44x80000i4N8klBsi4N8oCFyqCN8j4xMh4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4gp23WFzO6wd0q0Ogq0Q1E3wMQ1E30xF3g6wdoqgQ1E3g6wdoq0Q1E3G3g6wdoqgQ1E3m40FBO2w2oYic4CLQhXga0r4x8Xh7I0E1Ill9EZ9DTjnUA50e8FHUHyX86CNZFF-S-q3g6Ed0qgQ1F3g7i6wd8q0QxE3q6wfGgl0OWqKHWSCGC70a26of91ggP1YA513a7B0G1i2E6kfPoa0k0VPCu9FGYhPCjAVejPDdcPWpuHL00Fy0k3J8QQ3F8w0
 
 //https://www.beepbox.co/2_3/#6n31s6kbl02e07t9m0a7g0fj7i0r1o3210T0w0f1d1c0h0v0T0w3f1d1c3h6v0T0w1f1d1c0h0v0T2w1d1v3b4h4h4h4h4h404xci514h4h4h4h4h4h4h4h4h4h4h4h4p21QFxM2A4a2M5FaM4623120wOg2Ce2C78IC27iCvle0zSgsza5ARzFSWsAuO3ApoICItek2I5wagp97B0A0i8945N2M5Mawl0I1ui00Fyhg6y18QxE3ih00
@@ -266,6 +268,19 @@ var DEAD = 10;
         ctx.quadraticCurveTo(0, 1, 0, 1 - r);
         ctx.lineTo(0, r);
         ctx.quadraticCurveTo(0, 0, r, 0);
+    }));
+    shapes.set("spikebox", new Path(ctx => {
+        var i = .1;
+        var r = 1 - i;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(.5, i);
+        ctx.lineTo(1, 0);
+        ctx.lineTo(r, .5);
+        ctx.lineTo(1, 1);
+        ctx.lineTo(.5, r);
+        ctx.lineTo(0, 1);
+        ctx.lineTo(i, .5);
+        ctx.closePath();
     }));
     shapes.set("pause", new Path(ctx => {
         var a = .3;
@@ -2310,6 +2325,58 @@ class MiniDash extends Dasher{
     s = 1;
     mini = true;
 }
+class Spinner extends Chill{
+    tick() {
+        super.tick();
+        this.rot += PI/64;
+        this.r = this.rot;
+        if(++this.time % 2 == 0) {
+            for(let i = 0; i < 2; i++) {
+                var blob = new Bullet(this, this.r + i * PI);
+                blob.m = 0.01;
+                blob.hp = 0;
+                blob.spd *= .7;
+                blob.nocoll = TEAM.BAD;
+                enemies.push(blob);
+            }
+        }
+    }
+    color = "#ccc";
+    color2 = "#f77";
+    shape = shapes.get("square-2");
+    rot = 0;
+    time = 0;
+}
+class Lost extends Brain{
+    register(enemy) {
+        if(!expert) return;
+        if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team)) {
+            var dis = Entity.distance(this, enemy);
+            var d = 10;
+            if(dis < d) {
+                var n = (dis - d)/-d;
+                var rad = Entity.radian(enemy, this);
+                n **= 1;
+                this.brainPoints.push([rad, n]);
+            }
+        }else{//Run away
+            var dis = Entity.distance(this, enemy);
+            var d = 2;
+            if(dis < d) {
+                var n = (dis - d)/-d;
+                var rad = Entity.radian(this, enemy);
+                n **= .5;
+                this.brainPoints.push([rad, n * 2]);
+            }
+        }
+    }
+    tick() {
+        super.tick();
+        this.r = atan(this.vy, this.vx);
+    }
+    color = "#f5a";
+    shape = shapes.get("spikebox");
+}
 var deadzone = 0.1;
 var dead = (num, dual) => {
     if(num < deadzone && (!dual || num > -deadzone)) return 0;
@@ -2400,7 +2467,8 @@ class Player extends Entity{
 		}
 	}
     pad() {
-        var pads = navigator.getGamepads();
+        var pads = navigator?.getGamepads();
+        if(!pads) return;
         var pad = pads[gamepads[this.id]];
         
         if(!pad) return;
@@ -4002,6 +4070,16 @@ function levelName(level) {
             var txt = `Score: ${score}`;
             ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * .9);
 
+
+            var arr = enemies.filter(blob => {
+                return (blob.team & TEAM.BAD && !(blob.team & TEAM.BULLET));
+            });
+
+            var txt = `Enemies: ${arr.length}`;
+            ctx.font = `${scale}px Arial`;
+            ctx.fillStyle = "#ff0";
+            ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * 2);
+
             if(Survival) {
                 var boss = level % 5 == 0;
                 var alltime = (boss? 1000: 500);
@@ -4026,11 +4104,13 @@ function levelName(level) {
 
             leaveButton.resize(0, 0, len, len);
             leaveButton.draw("red");
-            var pads = navigator.getGamepads();
-            var pad = pads[gamepads[0]];
-            var A_button = pad?.buttons[0].value;
-            var B_button = pad?.buttons[1].value;
-            var Y_button = pad?.buttons[3].value;
+            var pads = navigator?.getGamepads();
+            if(pads) {
+                var pad = pads[gamepads[0]];
+                var A_button = pad?.buttons[0].value;
+                var B_button = pad?.buttons[1].value;
+                var Y_button = pad?.buttons[3].value;
+            }
             var allDead = mains[0].dead && (mains[1]? mains[1].dead: true);
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
@@ -4054,11 +4134,6 @@ function levelName(level) {
             var arr = enemies.filter(blob => {
                 return (blob.team & TEAM.BAD);
             });
-
-            var txt = `Enemies: ${arr.length}`;
-            ctx.font = `${scale}px Arial`;
-            ctx.fillStyle = "#ff0";
-            ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * 2);
 
             if(Survival && arr.length == 0 && (keys.use("Space") || A_button || buttonClick(restartButton))) {
                 timeLeft = 0;
@@ -4293,6 +4368,16 @@ function nextLevel() {
             blob.spawn();
             var spawn = new Spawner(blob);
             enemies.push(spawn);
+        break;
+        case 21:
+            for(let i = 0; i < 5; i++) {
+                var blob = new Spinner();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new Lost();
+                blob.spawn();
+                enemies.push(blob);
+            }
         break;
         default:
             --level;
