@@ -237,6 +237,19 @@ var DEAD = 10;
         ctx.lineTo(0, r);
         ctx.quadraticCurveTo(0, 0, r, 0);
     }));
+    shapes.set("square-2", new Path(ctx => {
+        var r = .2;
+        var a = 1 - r;
+        ctx.moveTo(r, 0);
+        ctx.lineTo(1 - r, 0);
+        ctx.quadraticCurveTo(a, r, 1, 0 + r);
+        ctx.lineTo(1, 1 - r);
+        ctx.quadraticCurveTo(a, a, 1 - r, 1);
+        ctx.lineTo(r, 1);
+        ctx.quadraticCurveTo(r, a, 0, 1 - r);
+        ctx.lineTo(0, r);
+        ctx.quadraticCurveTo(r, r, r, 0);
+    }));
     shapes.set("square.5", new Path(ctx => {
         var r = .5;
         ctx.moveTo(r, 0);
@@ -2313,7 +2326,7 @@ class Player extends Entity{
         var mx = (this.x + this.s * .5) * scale;
         var my = (this.y + this.s * .5) * scale;
 
-        var inBattle = enemies.filter(blob => blob instanceof Player).length;
+        var inBattle = enemies.filter(blob => !(blob instanceof Player)).length;
 
 		if(touch && touch.end) touch = false;
 		if(!touch) touches.forEach(obj => {
@@ -2720,8 +2733,8 @@ class TheDasher extends Player{
 }
 class Minion extends Brain{
     color = "#f5a";
-    shape = shapes.get("square.4");
-    wander = 0.001;
+    shape = shapes.get("square-2");
+    wander = 0.5;
     tick() {
         super.tick();
         this.r = atan(this.vy, this.vx);
@@ -2730,9 +2743,9 @@ class Minion extends Brain{
         // if(enemy instanceof Chaser) return;
         // if(enemy instanceof Bullet) return;
         if(!(this.hits & enemy.team)) return;
-        if(enemy.team & TEAM.BULLET) {
+        if(!(enemy.team & TEAM.BULLET)) {
             var dis = Entity.distance(this, enemy);
-            var d = 15;
+            var d = 5;
             if(dis < d) {
                 var n = (dis - d)/-d;
                 var rad = Entity.radian(enemy, this);
@@ -2741,7 +2754,7 @@ class Minion extends Brain{
             }
         }else{
             var dis = Entity.distance(this, enemy);
-            var d = 10;
+            var d = 15;
             if(dis < d) {
                 var n = (dis - d)/-d;
                 var rad = Entity.radian(this, enemy);
@@ -2949,7 +2962,7 @@ class TheSummoner extends SummonerClass{
     shape = shapes.get("bullet");
     shape2 = shapes.get("square.4");
     summonSound = sounds.Summon;
-    summons = [Chill, Walker, Mover, Chaser];
+    summons = [Chill, Walker, Mover, Minion];
     cloak = 0;
     tickSkill() {
         if(this.mrad === false) {
