@@ -1,5 +1,8 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
+
+//https://www.beepbox.co/2_3/#6n31s6kbl00e0Btbm0a7g0Bjbi0r1o3210T0w0f2d1c0h0v2T0w3f1d1c0h0v0T0w1f1d1c0h0v0T2w1d1v2b0000d3g0018i4x8310c44x80000i4N8klBsi4N8oCFyqCN8j4xMh4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4gp23WFzO6wd0q0Ogq0Q1E3wMQ1E30xF3g6wdoqgQ1E3g6wdoq0Q1E3G3g6wdoqgQ1E3m40FBO2w2oYic4CLQhXga0r4x8Xh7I0E1Ill9EZ9DTjnUA50e8FHUHyX86CNZFF-S-q3g6Ed0qgQ1F3g7i6wd8q0QxE3q6wfGgl0OWqKHWSCGC70a26of91ggP1YA513a7B0G1i2E6kfPoa0k0VPCu9FGYhPCjAVejPDdcPWpuHL00Fy0k3J8QQ3F8w0
+
 {
     class Pointer{
         /**@param {Touch} touch*/
@@ -3720,7 +3723,7 @@ onload = () => {
             if(expert) lvlMax = saveData.levelE;
             else lvlMax = saveData.level;
         }
-        if(keys.use("ArrowRight")) {
+        if(keys.multi("ArrowRight")) {
             if(multi) {
                 if(menu == 0) ++plasel;
                 if(menu == 1) ++pl2sel;
@@ -3730,7 +3733,7 @@ onload = () => {
                 if(menu == 1) ++selLvl;
             }
         }
-        if(keys.use("ArrowLeft")) {
+        if(keys.multi("ArrowLeft")) {
             if(multi) {
                 if(menu == 0) --plasel;
                 if(menu == 1) --pl2sel;
@@ -3757,7 +3760,8 @@ onload = () => {
         if(!lvlMax) {
             lvlMax = 0;
         }
-        selLvl += lvlMax + 1;
+        // selLvl += lvlMax + 1;
+        if(selLvl == -2) selLvl = lvlMax;
         selLvl %= lvlMax + 1;
         if(multi) menus = 3;
         else menus = 2;
@@ -3769,6 +3773,11 @@ onload = () => {
             mainMenu.active = false;
             level = selLvl + 1;
             restart();
+            if(selLvl == -1) {
+                Survival = true;
+            }else{
+                Survival = false;
+            }
             canvas.requestFullscreen().catch(a => 0);
         }
         for(let touch of touches.all) {
@@ -3835,6 +3844,9 @@ function restart() {
     if(!exp) exp = [];
     if(level) level -= 1;
     else level = 0;
+    if(Survival) {
+        level = 0;
+    }
 }
 onresize = () => {
     game.width = innerWidth;
@@ -3851,6 +3863,9 @@ onresize = () => {
 var keys = new (class Keys extends Map {
     use(code) {
         return this.get(code) == 1 && this.set(code, 2);
+    }
+    multi(code) {
+        return this.get(code) & 1 && this.set(code, 2);
     }
 });
 onkeydown = ({code}) => keys.set(code, keys.has(code) * 2 + 1);
@@ -3873,6 +3888,7 @@ var boss = {
     15: MafiaInvasion,
     20: Squish
 };
+var Survival;
 const ms = 1000/40;
 var frame = () => new Promise(resolve => {
     setTimeout(() => {
@@ -3891,14 +3907,22 @@ function levelName(level) {
         var event = boss[level];
         txt = `${event.type}${expert? " EX": ""}: ${event.name}`
     }
+    if(level == 0) return "Survival" + (expert? " EX": "");
+    if(Survival) {
+        var txt = `Wave ${level}`;
+        if(expert) txt += " EX";
+        return txt;
+    }
     return txt;
 }
 {
     let leaveButton = new Button;
     let restartButton = new Button;
+    let TIME = 0;
     var update = async function() {
         while(true) {
             await frame();
+            ++TIME;
             try{
             if(mainMenu.active) {
                 mainMenu();
@@ -3973,10 +3997,23 @@ function levelName(level) {
             var txt = levelName(level);
             ctx.font = `${scale}px Arial`;
             ctx.fillStyle = expert? "#f0d": "#fff";
-            ctx.fillText(txt, 0, scale - 5);
+            ctx.fillText(txt, 0, scale * .9);
+
             var len = ctx.measureText("Level A").width;
             var txt = `Score: ${score}`;
-            ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale - 5);
+            ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * .9);
+
+            if(Survival) {
+                var boss = level % 5 == 0;
+                var alltime = (boss? 1000: 500);
+                var timeLeft = alltime - TIME;
+                if(timeLeft < 0) timeLeft = 0;
+                txt = `Time: ${timeLeft}`;
+
+                if(timeLeft > 100) ctx.fillStyle = "#33c";
+                else ctx.fillStyle = "#c33";
+                ctx.fillText(txt, 0, scale * 2);
+            }
 
             let a = [];
             enemies = enemies.filter(blob => {
@@ -3998,6 +4035,7 @@ function levelName(level) {
             var allDead = mains[0].dead && (mains[1]? mains[1].dead: true);
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
+                Survival = false;
             }else if((allDead && (keys.use("Space") || A_button)) || buttonClick(restartButton) || Y_button) {
                 restart();
             }
@@ -4017,10 +4055,18 @@ function levelName(level) {
             var arr = enemies.filter(blob => {
                 return (blob.team & TEAM.BAD);
             });
+
+            var txt = `Enemies: ${arr.length}`;
+            ctx.font = `${scale}px Arial`;
+            ctx.fillStyle = "#ff0";
+            ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * 2);
             
-            if(!allDead && arr.length == 0) {
-                main.nextLevel();
-                enemies = [main];
+            if(!allDead && (arr.length == 0 || (Survival && timeLeft <= 0))) {
+                TIME = 0;
+                if(!Survival) {
+                    main.nextLevel();
+                    enemies = [main];
+                }
                 if(main.dead) {
                     main.x = mains[1].x;
                     main.y = mains[1].y;
@@ -4028,17 +4074,23 @@ function levelName(level) {
                 main.hp = main.xHp;
                 main.dead = 0;
                 if(mains[1]) {
-                    mains[1].nextLevel();
-                    enemies.push(mains[1]);
+                    if(!Survival) {
+                        mains[1].nextLevel();
+                        enemies.push(mains[1]);
+                    }
                     if(mains[1].dead) {
                         mains[1].x = main.x;
                         mains[1].y = main.y;
                     }
                     mains[1].hp = mains[1].xHp;
                     mains[1].dead = 0;
-                    mains[1].spawn();
+                    if(!Survival) {
+                        mains[1].spawn();
+                    }
                 }
-                main.spawn();
+                if(!Survival) {
+                    main.spawn();
+                }
                 nextLevel();
             }
             }catch(err) {
