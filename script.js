@@ -98,9 +98,14 @@ var canvas = document.createElement("canvas"),
 }
 {
     var gamepad;
+    var gamepads = [];
     addEventListener("gamepadconnected", ({gamepad: {index}}) => {
         gamepad = index;
+        gamepads.push(index);
     });
+    addEventListener("gamepaddisconnected", ({gamepad: {index}}) =>
+        gamepads = gamepads.filter(id => id != index)
+    );
 }
 {
     function Sound(src, volume=1) {
@@ -791,6 +796,19 @@ class Enemy extends Entity{
             what.attacked({enemy: this, atk: this.atk});
         }
     }
+    getMain() {
+        var dis = Entity.distance(mains[0], this);
+        if(mains[1]) {
+            var dis2 = Entity.distance(mains[1], this);
+
+            if(mains[1].dead && mains[0].dead) return mains[0];
+            else if(mains[1].dead) return mains[0];
+            else if(mains[0].dead) return mains[1];
+
+            if(dis > dis2) return mains[1];
+            else return mains[0];
+        }else return main;
+    }
     registerPlayer(what) {
         if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
         var dis = Entity.distance(this, what);
@@ -1079,7 +1097,7 @@ class Chill extends Enemy{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
         if(expert && player) {
             var l = .3;
             this.r = atan(this.vy, this.vx);
@@ -1145,7 +1163,7 @@ class Dasher extends Mover{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
         var m = this.hp/this.xHp;
         switch(this.phase) {
             case 0:
@@ -1256,7 +1274,7 @@ class Squish extends Enemy{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
         var p = this.ro;
         switch(this.phase) {
             case 0:
@@ -1509,7 +1527,7 @@ class Summoner extends Brain{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
         var {goal} = this;
         if(this.color2 == "#f00") {
             this.god = true;
@@ -1842,7 +1860,7 @@ class Turret extends Chill{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
         if(this.lastShot) --this.lastShot;
         if(Entity.distance(this, player) < this.range) {
             var rad = Entity.radian(player, this);
@@ -1902,7 +1920,7 @@ class Bomb extends Chill{
         }
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
         if(Entity.distance(this, player) < 5 && !this.timer) {
             this.timer = 1;
             if(expert) {
@@ -2105,7 +2123,7 @@ class MafiaGunner extends Mafia{
         if(this.lastShot) --this.lastShot;
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
 
         this.moveTo(player, (30 - this.lastShot)/20);
         if(Entity.distance(this, player) < 5) {
@@ -2162,7 +2180,7 @@ class MafiaCharger extends Mafia{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
 
         this.moving = dist(this.vx, this.vy) > (expert? 0.3: 0.1);
         var dis = Entity.distance(this, player);
@@ -2204,7 +2222,7 @@ class MiniDash extends Dasher{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
-        if(!player) player = main;
+        if(!player) player = this.getMain();
         var m = this.hp/this.xHp;
         switch(this.phase) {
             case 0:
@@ -2281,8 +2299,12 @@ var dead = (num, dual) => {
     return num / (1 - deadzone);
 }
 class Player extends Entity{
-    constructor() {
+    constructor(id=0) {
         super();
+        this.id = id;
+        this.spawn();
+    }
+    spawn() {
         this.x = (game.w - this.s)/2;
         this.y = (game.h - this.s)/2;
     }
@@ -2290,6 +2312,9 @@ class Player extends Entity{
 		var {touch, touch2} = this;
         var mx = (this.x + this.s * .5) * scale;
         var my = (this.y + this.s * .5) * scale;
+
+        var inBattle = enemies.filter(blob => blob instanceof Player).length;
+
 		if(touch && touch.end) touch = false;
 		if(!touch) touches.forEach(obj => {
 			if(obj.sx < innerWidth/2 && obj != touch2 && !obj.end) {
@@ -2301,13 +2326,16 @@ class Player extends Entity{
 				touch2 = obj;
 			}
 		});
-		if(touch && !this.moved) {
+		if(touch && this.mrad === false) {
             var mrad = atan(touch.my, touch.mx);
             var dis = dist(touch.mx, touch.my);
             var inside = dis > scale;
-			if(inside) this.move(mrad);
+			if(inside) {
+                this.move(mrad);
+                this.mrad = mrad;
+            }
 			this.touch = touch;
-            touch.used = true;
+            if(inBattle) touch.used = true;
 			ctx.strokeStyle = inside? this.color: this.color2;
 			ctx.beginPath();
 			ctx.lineWidth = scale * .125;
@@ -2321,9 +2349,8 @@ class Player extends Entity{
 			ctx.moveTo(mx, my);
 			ctx.lineTo(mx + touch.mx, my + touch.my);
 			ctx.stroke();
-            this.mrad = mrad;
 		}
-		if(touch2 && !this.skl) {
+		if(touch2) {
 			this.touch2 = touch2;
             var hrad = atan(touch2.my, touch2.mx);
             var dis = dist(touch2.mx, touch2.my);
@@ -2337,7 +2364,7 @@ class Player extends Entity{
                     this.ability(overdue? 3: 1, mrad, hrad);
                 }
 			}
-            touch2.used = true;
+            if(inBattle) touch2.used = true;
 			if(touch2.end) delete this.touch2;
 			ctx.lineWidth = scale * .125;
 			ctx.beginPath();
@@ -2356,7 +2383,7 @@ class Player extends Entity{
 	}
     pad() {
         var pads = navigator.getGamepads();
-        var pad = pads[gamepad];
+        var pad = pads[gamepads[this.id]];
         
         if(!pad) return;
 
@@ -2366,7 +2393,12 @@ class Player extends Entity{
         var dis = dist(x, y);
         var rad = atan(y, x);
         if(dis > 1) dis = 1;
-        this.move(rad, dis);
+        if(this.mrad === false) {
+            if(dis > 0.1) {
+                this.mrad = rad;
+                this.move(rad, dis);
+            }
+        }
 
         var x = pad.axes[2];
         var y = pad.axes[3];
@@ -2414,34 +2446,37 @@ class Player extends Entity{
         this.mrad = false;
         var mx = 0;
         var my = 0;
-        if(keys.has("KeyW")) --my;
-        if(keys.has("KeyS")) ++my;
-        if(keys.has("KeyA")) --mx;
-        if(keys.has("KeyD")) ++mx;
-        if(mx || my) {
-            var rad = atan(my, mx);
-            // this.r = rad;
-            this.move(rad);
-            var mrad = rad;
-            this.mrad = mrad;
-        }
-        mx = 0; my = 0;
-        if(keys.has("ArrowUp"   )) --my;
-        if(keys.has("ArrowDown" )) ++my;
-        if(keys.has("ArrowLeft" )) --mx;
-        if(keys.has("ArrowRight")) ++mx;
-        if(mx || my) {
-            var rad = atan(my, mx);
-            // this.r = rad;
-            this.skill(rad);
-            var srad = rad;
-        }
-        if(keys.has("ShiftRight")) {
-            this.ability(keys.get("ShiftRight"), mrad, srad);
-            keys.set("ShiftRight", 2);
+        // var multi = mains[1];
+        if(this.id == 0) {
+            if(keys.has("KeyW")) --my;
+            if(keys.has("KeyS")) ++my;
+            if(keys.has("KeyA")) --mx;
+            if(keys.has("KeyD")) ++mx;
+            if(mx || my) {
+                var rad = atan(my, mx);
+                // this.r = rad;
+                this.move(rad);
+                var mrad = rad;
+                this.mrad = mrad;
+            }
+            mx = 0; my = 0;
+            if(keys.has("ArrowUp"   )) --my;
+            if(keys.has("ArrowDown" )) ++my;
+            if(keys.has("ArrowLeft" )) --mx;
+            if(keys.has("ArrowRight")) ++mx;
+            if(mx || my) {
+                var rad = atan(my, mx);
+                // this.r = rad;
+                this.skill(rad);
+                var srad = rad;
+            }
+            if(keys.has("ShiftRight")) {
+                this.ability(keys.get("ShiftRight"), mrad, srad);
+                keys.set("ShiftRight", 2);
+            }
+            this.touchv2();
         }
         this.pad();
-        this.touchv2();
         if(this.lastShot) --this.lastShot;
         if(this.lastSkill) --this.lastSkill;
         this.r = atan(this.vy, this.vx);
@@ -2477,6 +2512,13 @@ class TheGunner extends Player{
     shape = shapes.get("square.4");
     color2 = "#aaf";
     shape2 = shapes.get("square.4");
+    constructor(id) {
+        super(id);
+        if(id == 1) {
+            this.color = "#5ff";
+            this.color2 = "#aff"; 
+        }
+    }
     get alpha() {
         if(this.lastSkill > 40) return .4;
         return super.alpha;
@@ -2531,8 +2573,14 @@ class TheDasher extends Player{
     ]
     shape2 = shapes.get("arrow-box");
     color = "#f70";
+    hue = 28;
     color2 = "#fff";
     color3 = "#a72";
+    constructor(id) {
+        super(id);
+        if(id == 1) this.color = "#ff0";
+        this.icolor = this.color;
+    }
     // atk = 2;
     hit(what) {
         super.hit(what);
@@ -2612,7 +2660,7 @@ class TheDasher extends Player{
         if(this.lastSkill > 15) {
             this.god = true;
             this.nocoll = TEAM.BULLET;
-            this.color = "#f70";
+            this.color = this.icolor;
             // this.color2 = "#000";
             this.m = 5;
             if(this.s == 1) {
@@ -2624,7 +2672,7 @@ class TheDasher extends Player{
             this.god = false;
             this.nocoll = 0;
             // this.color2 = "#fff";
-            this.color = `hsl(28, ${(this.lastSkill % 10) * 10}%, 50%)`;
+            this.color = `hsl(${this.hue}, ${(this.lastSkill % 10) * 10}%, 50%)`;
             this.m = 1;
             if(this.s == 1.5) {
                 this.x += .25;
@@ -2632,7 +2680,7 @@ class TheDasher extends Player{
                 this.s = 1;
             }
         }else{
-            this.color = "#f70";
+            this.color = this.icolor;
             this.god = false;
             this.nocoll = 0;
             // this.color2 = "#fff";
@@ -2704,9 +2752,6 @@ class Minion extends Brain{
     }
 }
 class SummonerClass extends Player{
-    constructor() {
-        super();
-    }
     onXp() {
         var pets = floor(this.p/5);
         if(pets < (10 - this.alive.length)) {
@@ -2886,8 +2931,21 @@ class TheSummoner extends SummonerClass{
         "#f82",
         "#f82"
     ]
-    color = "#b2f";
-    color2 = "#f82";
+    constructor(id) {
+        super(id);
+        this.ncolor = "#b2f";
+        this.ncolor2 = "#425";
+        this.ccolor = "#f82";
+        this.ccolor2 = "#532";
+        if(id == 1) {
+            this.ncolor = "#42f"
+            this.ncolor2 = "#225";
+            this.ccolor = "#ff2";
+            this.ccolor2 = "#552";
+        }
+        this.color = this.ncolor;
+        this.color2 = this.ccolor;
+    }
     shape = shapes.get("bullet");
     shape2 = shapes.get("square.4");
     summonSound = sounds.Summon;
@@ -2905,22 +2963,22 @@ class TheSummoner extends SummonerClass{
         }
         if(this.cloak > 30) {
             for(let blob of this.alive) {
-                blob.color = "#b2f";
-                blob.color2 = "#425";
+                blob.color = this.ncolor;
+                blob.color2 = this.ncolor2;
                 blob.team = TEAM.GOOD + TEAM.BULLET;
             }
-            this.color = "#f82";
-            this.color2 = "#532";
+            this.color = this.ccolor;
+            this.color2 = this.ccolor2;
             this.team = TEAM.GOOD;
         }else{
             for(let blob of this.alive) {
-                blob.color = "#f82";
-                blob.color2 = "#532";
+                blob.color = this.ccolor;
+                blob.color2 = this.ccolor2;
                 blob.team = TEAM.GOOD;
             }
             this.team = TEAM.GOOD + TEAM.BULLET;
-            this.color = "#b2f";
-            this.color2 = "#425";
+            this.color = this.ncolor;
+            this.color2 = this.ncolor2;
         }
     }
 }
@@ -2948,8 +3006,12 @@ class TheMagician extends SummonerClass{
     color2 = "#cfc";
     rec = 0.15;
     shape2 = shapes.get("tophat");
-    constructor() {
-        super();
+    constructor(id) {
+        super(id);
+        if(id == 1) {
+            this.color = "#5ff";
+            this.color2 = "#cff";
+        }
         this.spd *= 1.2;
     }
     draw2() {
@@ -3044,8 +3106,12 @@ class TheReformed extends TheGunner{
     color = "#ffa";
     color2 = "#f57";
     icolor = "#ff0";
-    constructor() {
-        super();
+    constructor(id) {
+        super(id);
+        if(id == 1) {
+            this.color = "#fad";
+            this.color2 = "#a5f";
+        }
         this.spd *= 1.5;
     }
     skill(r) {
@@ -3149,8 +3215,12 @@ class TheLucky extends TheGunner{
     ];
     color = "#ff0";
     color2 = "#ffa";
-    constructor() {
-        super();
+    constructor(id) {
+        super(id);
+        if(id == 1) {
+            this.color = "#7f7";
+            this.color2 = "#cfc";
+        }
         // this.spd *= 4;
         // this.friction *= .7;
     }
@@ -3314,6 +3384,14 @@ class TheMaster extends SummonerClass{
     summons = [Droid, Bot];
     color = "#fff";
     color2 = "#aaa";
+    constructor(id) {
+        super(id);
+        if(id == 1) {
+            this.color = "#999";
+            this.color2 = "#555";
+        }
+        this.icolor = this.color2;
+    }
     shape = shapes.get("trapoid");
     shape2 = shapes.get("trapoid");
     onXp() {
@@ -3334,11 +3412,12 @@ class TheMaster extends SummonerClass{
             blob.dead = DEAD;
         }
         this.shield = true;
-        this.color2 = "#aaa";
+        this.color2 = this.icolor;
         this.p = 10;
     }
 }
 var main;
+var mains = [];
 var bosses = new Set;
 var enemies;
 var exp;
@@ -3357,10 +3436,6 @@ try{
     failedSave = true
     console.log("failed to load savedata");
 }
-// saveData = {
-//     levelE: 13,
-//     level: 13
-// }
 var failedSave;
 if(failedSave && Enviroment == env.SOLOLEARN) {
     saveData = {
@@ -3387,7 +3462,9 @@ onload = () => {
 {
     let menu = 0;
     let players = [];
+    let players2 = [];
     let plasel = 0;
+    let pl2sel = 0;
     let selLvl = 0;
     let lvlMax = 0;
     let menus = 2;
@@ -3396,6 +3473,7 @@ onload = () => {
     let lastButton = new Button;
     let startButton = new Button;
     let swapButton = new Button;
+    let multi = false;
     /**@param {Button} button*/
     function buttonClick(button) {
         for(let touch of touches.all) {
@@ -3438,15 +3516,37 @@ onload = () => {
             blob.drawWith({x, y, s});
             i += 1;
         }
+        var i = 0;
+        if(multi) for(let blob of players2) {
+            var s = h/scale;
+            var x = (game.w - s)/2 + s * (i - pl2sel) * 1.5;
+            var y = game.h/50;
+            y += s * 1.3;
+            if(i != pl2sel) {
+                // swapButton.resize(x * scale, y * scale, s * scale, s * scale);
+                // swapButton.draw("purple");
+                // if(buttonClick(swapButton)) {
+                //     swap = i;
+                // }
+                x += .25 * s;
+                y += .25 * s;
+                s *= .5;
+            }else{
+                // startButton.resize(x * scale, y * scale, s * scale, s * scale);
+                // startButton.draw("blue");
+            }
+            blob.drawWith({x, y, s});
+            i += 1;
+        }
         if(swap !== false) plasel = swap;
         s = h/scale;
         var y = game.h/50;
-        y += .25 * s;
+        if(multi) y += s * 1.3;
         var text = levelName(selLvl + 1);
         ctx.font = `${h}px Arial`;
         var {width} = ctx.measureText(text);
         var x = (game.width - width)/2;
-        y += s; y *= scale;
+        y += s * 1.25; y *= scale;
         ctx.fillStyle = expert? "#f0d": "#fff";
         ctx.strokeStyle = expert? "#f0d": "#fff";
         levelButton.resize(x, y + h * .2, width, h);
@@ -3457,6 +3557,7 @@ onload = () => {
         y += s/5;
         x -= s/5;
         {
+            var b = 1 + multi;
             if(selLvl > 0) {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
@@ -3464,7 +3565,7 @@ onload = () => {
                 ctx.lineTo(x-s, y+s/2);
                 ctx.closePath();
                 ctx.lineWidth = 2;
-                if(menu == 1) ctx.fill();
+                if(menu == b) ctx.fill();
                 else ctx.stroke();
             }
             lastButton.resize(x - s, y, s, s);
@@ -3477,13 +3578,13 @@ onload = () => {
                 ctx.lineTo(x+s, y+s/2);
                 ctx.closePath();
                 ctx.lineWidth = 2;
-                if(menu == 1) ctx.fill();
+                if(menu == b) ctx.fill();
                 else ctx.stroke();
             }
             nextButton.resize(x, y, s, s);
             nextButton.draw("green");
         }
-        {
+        if(!multi) {
             let main = players[plasel];
             let desc = main.desc;
             let cols = main.cols;
@@ -3508,12 +3609,30 @@ onload = () => {
             else lvlMax = saveData.level;
         }
         if(keys.use("ArrowRight")) {
-            if(menu == 0) ++plasel;
-            if(menu == 1) ++selLvl;
+            if(multi) {
+                if(menu == 0) ++plasel;
+                if(menu == 1) ++pl2sel;
+                if(menu == 2) ++selLvl;
+            }else{
+                if(menu == 0) ++plasel;
+                if(menu == 1) ++selLvl;
+            }
         }
         if(keys.use("ArrowLeft")) {
-            if(menu == 0) --plasel;
-            if(menu == 1) --selLvl;
+            if(multi) {
+                if(menu == 0) --plasel;
+                if(menu == 1) --pl2sel;
+                if(menu == 2) --selLvl;
+            }else{
+                if(menu == 0) --plasel;
+                if(menu == 1) --selLvl;
+            }
+        }
+        if(keys.use("Enter")) {
+            multi = !multi;
+        }
+        if(gamepads.length < 2) {
+            multi = false;
         }
         if(buttonClick(nextButton)) ++selLvl;
         if(buttonClick(lastButton)) --selLvl;
@@ -3521,11 +3640,15 @@ onload = () => {
         if(keys.use("ArrowDown")) ++menu;
         plasel += players.length;
         plasel %= players.length;
+        pl2sel += players.length;
+        pl2sel %= players.length;
         if(!lvlMax) {
             lvlMax = 0;
         }
         selLvl += lvlMax + 1;
         selLvl %= lvlMax + 1;
+        if(multi) menus = 3;
+        else menus = 2;
         // selLvl = 15;
         menu += menus;
         menu %= menus;
@@ -3552,6 +3675,10 @@ onload = () => {
         mainMenu.load();
         mainMenu.active = false;
         main = players[plasel];
+        mains = [main];
+        if(multi) {
+            mains.push(players2[pl2sel]);
+        }
         exp = [];
     }
     mainMenu.load = () => {
@@ -3559,23 +3686,30 @@ onload = () => {
         if(expert) lvlMax = saveData.levelE;
         else lvlMax = saveData.level;
         players = [new TheGunner];
+        players2 = [new TheGunner(1)];
         if(saveData.level >= 5) {
             players.push(new TheDasher);
+            players2.push(new TheDasher(1));
         }
         if(saveData.level >= 10) {
             players.push(new TheSummoner);
+            players2.push(new TheSummoner(1));
         }
         if(saveData.levelE >= 10) {
             players.push(new TheMagician);
+            players2.push(new TheMagician(1));
         }
         if(saveData.level >= 15) {
             players.push(new TheReformed);
+            players2.push(new TheReformed(1));
         }
         if(saveData.level >= 20) {
             players.push(new TheLucky);
+            players2.push(new TheLucky(1));
         }
         if(saveData.levelE >= 20) {
             players.push(new TheMaster);
+            players2.push(new TheMaster(1));
         }
     };
 }
@@ -3584,7 +3718,8 @@ var level, expert, score;
 function restart() {
     score = 0;
     mainMenu.spawn();
-    enemies = [main];
+    enemies = [mains[0]];
+    if(mains[1]) enemies.push(mains[1]);
     if(!exp) exp = [];
     if(level) level -= 1;
     else level = 0;
@@ -3743,13 +3878,15 @@ function levelName(level) {
 
             leaveButton.resize(0, 0, len, len);
             leaveButton.draw("red");
-            var pad = navigator.getGamepads()[gamepad];
+            var pads = navigator.getGamepads();
+            var pad = pads[gamepads[0]];
             var A_button = pad?.buttons[0].value;
             var B_button = pad?.buttons[1].value;
             var Y_button = pad?.buttons[3].value;
+            var allDead = mains[0].dead && mains[1]?.dead;
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
-            }else if((main.dead && (keys.use("Space") || A_button)) || buttonClick(restartButton) || Y_button) {
+            }else if((allDead && (keys.use("Space") || A_button)) || buttonClick(restartButton) || Y_button) {
                 restart();
             }
 
@@ -3769,9 +3906,27 @@ function levelName(level) {
                 return (blob.team & TEAM.BAD);
             });
             
-            if(!main.dead && arr.length == 0) {
+            if(!allDead && arr.length == 0) {
                 main.nextLevel();
                 enemies = [main];
+                if(main.dead) {
+                    main.x = mains[1].x;
+                    main.y = mains[1].y;
+                }
+                main.hp = main.xHp;
+                main.dead = 0;
+                if(mains[1]) {
+                    mains[1].nextLevel();
+                    enemies.push(mains[1]);
+                    if(mains[1].dead) {
+                        mains[1].x = main.x;
+                        mains[1].y = main.y;
+                    }
+                    mains[1].hp = mains[1].xHp;
+                    mains[1].dead = 0;
+                    mains[1].spawn();
+                }
+                main.spawn();
                 nextLevel();
             }
             }catch(err) {
