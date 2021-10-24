@@ -2305,28 +2305,6 @@ class MiniDash extends Dasher{
     s = 1;
     mini = true;
 }
-class Spinner extends Chill{
-    tick() {
-        super.tick();
-        this.rot += PI/64;
-        this.r = this.rot;
-        if(++this.time % 2 == 0) {
-            for(let i = 0; i < 2; i++) {
-                var blob = new Bullet(this, this.r + i * PI);
-                blob.m = 0.01;
-                blob.hp = 0;
-                blob.spd *= .7;
-                blob.nocoll = TEAM.BAD;
-                enemies.push(blob);
-            }
-        }
-    }
-    color = "#ccc";
-    color2 = "#f77";
-    shape = shapes.get("square-2");
-    rot = 0;
-    time = 0;
-}
 var deadzone = 0.1;
 var dead = (num, dual) => {
     if(num < deadzone && (!dual || num > -deadzone)) return 0;
@@ -2764,25 +2742,26 @@ class Minion extends Brain{
     register(enemy) {
         // if(enemy instanceof Chaser) return;
         // if(enemy instanceof Bullet) return;
-        // if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team)) {
-        //     var dis = Entity.distance(this, enemy);
-        //     var d = 10;
-        //     if(dis < d) {
-        //         var n = (dis - d)/-d;
-        //         var rad = Entity.radian(enemy, this);
-        //         n **= 2;
-        //         this.brainPoints.push([rad, n]);
-        //     }
-        // }else{//Run away
+        if(!(this.hits & enemy.team)) return;
+        if(!(enemy.team & TEAM.BULLET)) {
             var dis = Entity.distance(this, enemy);
-            var d = 3;
+            var d = 5;
+            if(dis < d) {
+                var n = (dis - d)/-d;
+                var rad = Entity.radian(enemy, this);
+                n **= .3;
+                this.brainPoints.push([rad, n * 3]);
+            }
+        }else{
+            var dis = Entity.distance(this, enemy);
+            var d = 15;
             if(dis < d) {
                 var n = (dis - d)/-d;
                 var rad = Entity.radian(this, enemy);
-                n **= .5;
+                n **= 2;
                 this.brainPoints.push([rad, n * 2]);
             }
-        // }
+        }
     }
 }
 class SummonerClass extends Player{
@@ -3150,10 +3129,11 @@ class TheReformed extends TheGunner{
     }
     skill(r) {
         var u = PI/48;
-        var end = r + u * 5.1;
+        // var end = r + u * 5;
         if(!this.lastShot && this.bullets && !this.reloading) {
             --this.bullets;
-            for(let rad = r - u * 5; rad <= end; rad += u) {
+            for(let i = -5; i <= 5; ++i) {
+                var rad = r + i * u;
                 var blob = new Bullet(this, rad);
                 blob.team = TEAM.BULLET + TEAM.GOOD;
                 blob.coll = TEAM.BULLET;
@@ -3358,120 +3338,24 @@ class Droid extends Turret{
     m = 0.01;
 }
 class Bot extends Droid{
-    constructor() {
-        super();
-        this.brainPoints = [];
-        this.rad = random(PI2);
-        this.spd *= .5;
-    }
-    brainMove() {
-        var lines = [];
-        var max;
-        var add = (PI * 2)/64;
-        for(let a = 0; a < PI * 2; a += add) {
-            var num = 0;
-            for(let [rad, pow] of this.brainPoints) {
-                let n = pow < 0; //iaNegative?
-                num += abs(((cos(a - rad) + 1)/2) ** (n? 2: .2)) * pow;
-            }
-            if(isNaN(max) || num > max) {
-                max = num;
-            }
-            lines.push([a, num]);
-        }
-        var [rad] = randomOf(lines.filter(([a, num]) => num == max));
-        max = abs(max);
-
-        this.rad = rad;
-
-        this.move(rad, max);
-        this.crad = rad;
-        this.cmax = max;
-        this.lines = lines;
-        this.brainPoints = [];
-    }
-    wander = 1;
-    follow() {
-        this.rad += (srand() - .5)/4;
-        this.brainPoints.push([this.rad, this.wander]);
-        var lx = this.x + this.s;
-        var ly = this.y + this.s;
-
-        var d = 10;
-        var p = 15;
-
-        if(this.x < d) {
-            var n = (this.x - d)/-d;
-            n **= p;
-            this.brainPoints.push([PI, -n]);
-        }
-        if(lx > game.w - d) {
-            var dis = game.w - lx;
-            var n = (dis - d)/-d;
-            n **= p;
-            this.brainPoints.push([0, -n]);
-        }
-        if(this.y < d) {
-            var n = (this.y - d)/-d;
-            n **= p;
-            this.brainPoints.push([PI * 3/2, -n]);
-        }
-        if(ly > game.h - d) {
-            var dis = game.h - ly;
-            var n = (dis - d)/-d;
-            n **= p;
-            this.brainPoints.push([PI/2, -n]);
-        }
-        this.brainMove();
-    }
     tick() {
-        this.follow();
-        this.r = atan(this.vy, this.vx);
         if(this.lastShot) --this.lastShot;
         var {player} = this;
         if(player && player.dead) delete this.player;
         if(!player) return;
 
+        this.moveTo(player, (30 - this.lastShot)/20);
         if(Entity.distance(this, player) < 5) {
             var rad = Entity.radian(player, this);
             this.shoot(rad);
         }
-    }
-    register(enemy) {
-        // if(enemy instanceof Chaser) return;
-        // if(enemy instanceof Bullet) return;
-        super.register(enemy);
-        // if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team)) {
-        //     var dis = Entity.distance(this, enemy);
-        //     var d = 10;
-        //     if(dis < d) {
-        //         var n = (dis - d)/-d;
-        //         var rad = Entity.radian(enemy, this);
-        //         n **= 1;
-        //         this.brainPoints.push([rad, n]);
-        //     }
-        // }else{//Run away
-            // var dis = Entity.distance(this, enemy);
-            // var d = 1;
-            // if(dis < d) {
-            //     var n = (dis - d)/-d;
-            //     var rad = Entity.radian(this, enemy);
-            //     n **= .5;
-            //     this.brainPoints.push([rad, n * 2]);
-            // }
-        // }
-        if(enemy.team & this.team && !(enemy.team & TEAM.BULLET)) {//Run away
-            var dis = Entity.distance(this, enemy);
-            var d = 7;
-            if(dis < d) {
-                var n = (dis - d)/-d;
-                var rad = Entity.radian(this, enemy);
-                n **= 3;
-                this.brainPoints.push([rad, n * 2]);
-            }
-        }
+        this.r = atan(this.vy, this.vx);
     }
     ro = PI * .5;
+    constructor() {
+        super();
+        this.spd *= .5;
+    }
     shape = shapes.get("trapoid-2");
 }
 class TheMaster extends SummonerClass{
@@ -3479,7 +3363,8 @@ class TheMaster extends SummonerClass{
         "Tower defense?",
         "Let your bots fight for you",
         "Skill: Summon",
-        "Ability: Switch summon"
+        "Ability: Switch summon",
+        "Passive: Exploding shield"
     ];
     cols = [
         "#aaa",
@@ -3488,26 +3373,26 @@ class TheMaster extends SummonerClass{
         "#fff"
     ];
     summonSound = sounds.BotSummon;
-    // attacked(obj) {
-    //     if(this.shield) {
-    //         this.shield = false;
-    //         this.noHit = 10;
-    //         this.color2 = "#0000";
+    attacked(obj) {
+        if(this.shield) {
+            this.shield = false;
+            this.noHit = 10;
+            this.color2 = "#0000";
 
-    //         var u = PI2/8;
-    //         for(let i = 0; i < PI2; i += u) {
-    //             var blob = new Bullet(this, i);
-    //             blob.coll = 0;
-    //             blob.time = 30;
-    //             blob.spd /= 2;
+            var u = PI2/8;
+            for(let i = 0; i < PI2; i += u) {
+                var blob = new Bullet(this, i);
+                blob.coll = 0;
+                blob.time = 30;
+                blob.spd /= 2;
                 
-    //             enemies.push(blob);
-    //         }
-    //         sounds.Explode.play();
-    //     }else if(!this.noHit) {
-    //         super.attacked(obj);
-    //     }
-    // }
+                enemies.push(blob);
+            }
+            sounds.Explode.play();
+        }else if(!this.noHit) {
+            super.attacked(obj);
+        }
+    }
     noHit = 10;
     ro = PI * .5;
     summons = [Droid, Bot];
@@ -4076,7 +3961,6 @@ function nextLevel() {
         saveData.level = level;
     }
     saveData.save();
-    //Levels 1 - 20
     switch(++level) {
         case 1:
             for(let i = 0; i < 10; i++) {
@@ -4256,13 +4140,6 @@ function nextLevel() {
             blob.spawn();
             var spawn = new Spawner(blob);
             enemies.push(spawn);
-        break;
-        case 21:
-            for(let i = 0; i < 5; i++) {
-                var blob = new Spinner();
-                blob.spawn();
-                enemies.push(blob);
-            }
         break;
         default:
             --level;
