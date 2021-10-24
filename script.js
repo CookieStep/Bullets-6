@@ -3,6 +3,8 @@ var canvas = document.createElement("canvas"),
 
 //https://www.beepbox.co/2_3/#6n31s6kbl00e0Btbm0a7g0Bjbi0r1o3210T0w0f2d1c0h0v2T0w3f1d1c0h0v0T0w1f1d1c0h0v0T2w1d1v2b0000d3g0018i4x8310c44x80000i4N8klBsi4N8oCFyqCN8j4xMh4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4gp23WFzO6wd0q0Ogq0Q1E3wMQ1E30xF3g6wdoqgQ1E3g6wdoq0Q1E3G3g6wdoqgQ1E3m40FBO2w2oYic4CLQhXga0r4x8Xh7I0E1Ill9EZ9DTjnUA50e8FHUHyX86CNZFF-S-q3g6Ed0qgQ1F3g7i6wd8q0QxE3q6wfGgl0OWqKHWSCGC70a26of91ggP1YA513a7B0G1i2E6kfPoa0k0VPCu9FGYhPCjAVejPDdcPWpuHL00Fy0k3J8QQ3F8w0
 
+//https://www.beepbox.co/2_3/#6n31s6kbl02e07t9m0a7g0fj7i0r1o3210T0w0f1d1c0h0v0T0w3f1d1c3h6v0T0w1f1d1c0h0v0T2w1d1v3b4h4h4h4h4h404xci514h4h4h4h4h4h4h4h4h4h4h4h4p21QFxM2A4a2M5FaM4623120wOg2Ce2C78IC27iCvle0zSgsza5ARzFSWsAuO3ApoICItek2I5wagp97B0A0i8945N2M5Mawl0I1ui00Fyhg6y18QxE3ih00
+
 {
     class Pointer{
         /**@param {Touch} touch*/
@@ -4060,8 +4062,12 @@ function levelName(level) {
             ctx.font = `${scale}px Arial`;
             ctx.fillStyle = "#ff0";
             ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * 2);
+
+            if(Survival && arr.length == 0 && keys.use("Space")) {
+                timeLeft = 0;
+            }
             
-            if(!allDead && (arr.length == 0 || (Survival && timeLeft <= 0))) {
+            if(!allDead && (Surivial? timeLeft <= 0: arr.length == 0)) {
                 TIME = 0;
                 if(!Survival) {
                     main.nextLevel();
