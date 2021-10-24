@@ -143,20 +143,20 @@ var canvas = document.createElement("canvas"),
         Wall: new Sound("Wall.wav", .3),
         Hit: new Sound("Wall.wav"),
         Dash: new Sound("Dash.wav", .1),
-        MachineGun: new Sound("MachineGun.wav", .05),
-        Magic: new Sound("Magic.wav"),
-        BigMagic: new Sound("BigMagic.wav"),
-        Reload: new Sound("Reload.wav"),
+        MachineGun: new Sound("MachineGun.wav", .15),
+        Magic: new Sound("Magic.wav", .2),
+        BigMagic: new Sound("BigMagic.wav", .2),
+        Reload: new Sound("Reload.wav", .7),
         Smack: new Sound("Smack.wav"),
-        Shotgun: new Sound("Shotgun.wav"),
-        Summon: new Sound("Summon.wav"),
+        Shotgun: new Sound("Shotgun.wav", .5),
+        Summon: new Sound("Summon.wav", .3),
         Explode: new Sound("Explode.wav", .2),
-        BotSummon: new Sound("BotSummon.wav")
+        BotSummon: new Sound("BotSummon.wav", .7)
     }
 }
 var volumeLevel = 10;
 var {
-    cos, sin, 
+    cos, sin,
     atan2: atan,
     abs, sqrt,
     PI, floor,
@@ -3883,7 +3883,7 @@ function levelName(level) {
             var A_button = pad?.buttons[0].value;
             var B_button = pad?.buttons[1].value;
             var Y_button = pad?.buttons[3].value;
-            var allDead = mains[0].dead && mains[1]?.dead;
+            var allDead = mains[0].dead && (mains[1]? mains[1].dead: true);
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
             }else if((allDead && (keys.use("Space") || A_button)) || buttonClick(restartButton) || Y_button) {
