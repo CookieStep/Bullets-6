@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//LLP
+//BMF
 
 const env = {
     SOLOLEARN: Symbol()
@@ -1055,6 +1055,8 @@ class Bullet extends Mover{
         this.color2 = parent.color2;
         this.coll = parent.coll + TEAM.BULLET;
     }
+    xHp = .5;
+    hp = .5;
     hitSound = false;
     static position(what, rad, parent) {
         if(!parent) parent = what.parent;
@@ -2275,10 +2277,10 @@ class MiniDash extends Dasher{
                 this.m = 10
                 // this.nocoll = this.hits;
                 this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
-                if(expert || this.flash < 30) {
+                if(expert || this.flash < 10) {
                     this.r = Entity.radian(player, this);
                 }
-                if(this.flash >= 10) {
+                if(this.flash >= (expert? 10: 15)) {
                     this.phase = 2;
                     this.spd = 0.3;
                     this.timer = 0;
@@ -2331,7 +2333,7 @@ class Spinner extends Chill{
         super.tick();
         this.rot += PI/64;
         this.r = this.rot;
-        if(++this.time % 2 == 0) {
+        if(++this.time % 4 == 0) {
             for(let i = 0; i < 2; i++) {
                 var blob = new Bullet(this, this.r + i * PI);
                 blob.m = 0.01;
@@ -2844,7 +2846,7 @@ class Minion extends Brain{
 class SummonerClass extends Player{
     onXp() {
         var pets = floor(this.p/5);
-        if(pets < (10 - this.alive.length)) {
+        if(pets < (this.maxSum - this.alive.length)) {
             this.p += 1;
         }
     }
@@ -2856,6 +2858,7 @@ class SummonerClass extends Player{
     getPet() {
         this.pet = this.summon();
     }
+    maxSum = 10;
     summon() {
         var summon = new (this.summons[this.selected]);
         Bullet.position(summon, random(PI2), this);
@@ -2866,13 +2869,14 @@ class SummonerClass extends Player{
         summon.hits = TEAM.BAD;
         summon.coll = TEAM.BAD + TEAM.GOOD;
         summon.hp = .5;
+        summon.parent = this;
         return summon;
     }
     tick() {
         super.tick();
         var pets = floor(this.p/5);
         if(pets < 0) pets = 0;
-        if(pets > 10) pets = 10;
+        if(pets > this.maxSum) pets = this.maxSum;
         if(this.pets.length < pets) {
             var pet = this.summon();
             pet.s = .5;
@@ -2880,7 +2884,7 @@ class SummonerClass extends Player{
         }else this.pets.length = pets;
         this.r = 0;
         this.alive = this.alive.filter(blob => !blob.dead);
-        if(pets < (10 - this.alive.length)) {
+        if(pets < (this.maxSum - this.alive.length)) {
             this.p += this.rec;
         }
     }
@@ -2946,7 +2950,7 @@ class SummonerClass extends Player{
             enemies.push(blob);
             this.alive.push(blob);
             blob.inv.set(this, 10);
-            blob.hp = 1;
+            blob.hp = blob.xHp;
             this.p -= 5;
             this.lastShot = 7;
             this.summonSound?.play();
@@ -3365,7 +3369,19 @@ class TheLucky extends TheGunner{
 class Droid extends Turret{
     range = 12;
     mo = PI/8;
+    hp = 1.1;
+    xHp = 1.1;
+    m = 25;
     good = true;
+    shape = shapes.get("square");
+    heal() {
+        if(this.hp < this.xHp) {
+            this.hp += 0.005;
+        }
+        if(this.hp > this.xHp) {
+            this.hp = this.xHp;
+        }
+    }
     register(what) {
         if(!(what.hits & this.team)) return;
         var dis = Entity.distance(this, what);
@@ -3383,17 +3399,21 @@ class Droid extends Turret{
             // blob.team = TEAM.BULLET;
             // blob.coll = TEAM.BULLET;
             blob.nocoll = TEAM.GOOD;
+            blob.hits += TEAM.BULLET;
+            blob.nohit = TEAM.GOOD;
             blob.spd *= 1.2;
             blob.time = 10;
-            blob.atk = .4;
-            blob.m = 2;
+            blob.atk = .5;
+            // blob.m = 2;
             enemies.push(blob);
             this.lastShot = 10;
             sounds.Shoot.play();
             return blob;
         }
     }
+    atk = .5;
     tick() {
+        this.heal();
         var {player} = this;
         if(player && player.dead) delete this.player;
         if(!player) return;
@@ -3405,11 +3425,11 @@ class Droid extends Turret{
             var rad = Entity.radian(obj, this);
             var dis = rDis(this.r - PI/2, rad);
             // this.r = rad + PI/2;
-            var m = this.mo;
-            if(abs(dis) < m) {
+            // var m = this.mo;
+            // if(abs(dis) < m) {
                 this.r = rad + PI/2;
                 this.shoot(this.r - PI/2);
-            }else this.r += sign(dis) * m;
+            // }else this.r += sign(dis) * m;
         }
     }
     m = 0.01;
@@ -3421,6 +3441,9 @@ class Bot extends Droid{
         this.rad = random(PI2);
         this.spd *= .5;
     }
+    m = 1;
+    // hp = 1;
+    // xHp = 1;
     brainMove() {
         var lines = [];
         var max;
@@ -3485,11 +3508,12 @@ class Bot extends Droid{
         this.follow();
         this.r = atan(this.vy, this.vx);
         if(this.lastShot) --this.lastShot;
+        this.heal();
         var {player} = this;
         if(player && player.dead) delete this.player;
         if(!player) return;
 
-        if(Entity.distance(this, player) < 5) {
+        if(Entity.distance(this, player) < this.range) {
             var rad = Entity.radian(player, this);
             this.shoot(rad);
         }
@@ -3531,6 +3555,53 @@ class Bot extends Droid{
     ro = PI * .5;
     shape = shapes.get("trapoid-2");
 }
+class Roller extends Bot{
+    shape = shapes.get("square.4");
+    tick() {
+        var enemy = this.parent;
+        var dis = Entity.distance(this, enemy);
+        {
+            var rad = Entity.radian(enemy, this);
+            var dis = Entity.distance(this, enemy);
+            let maxDis = 5;
+            let num = (maxDis - dis)/maxDis;
+            num = 1 - num;
+            this.brainPoints.push([rad, num * 2]);
+        }
+        {
+            var enemy = this.player;
+            if(enemy) {
+                var dis = Entity.distance(this, enemy);
+                if(dis > 5) {
+                    var rad = Entity.radian(enemy, this);
+                    this.brainPoints.push([rad, 1]);
+                }
+            }
+        }
+        super.tick();
+    }
+    register(what) {
+        if(what.team & this.team && !(what.team & TEAM.BULLET)) {//Run away
+            var dis = Entity.distance(this, what);
+            var d = 7;
+            if(dis < d) {
+                var n = (dis - d)/-d;
+                var rad = Entity.radian(this, what);
+                n **= 3;
+                this.brainPoints.push([rad, n * 2]);
+            }
+        }
+        if(!(what.hits & this.team)) return;
+        var dis = Entity.distance(this.parent, what);
+        if(!this.player) {
+            this.player = what;
+            this.dis = dis;
+        }else if(dis < this.dis) {
+            this.player = what;
+            this.dis = dis;
+        }
+    }
+}
 class TheMaster extends SummonerClass{
     desc = [
         "Tower defense?",
@@ -3565,9 +3636,9 @@ class TheMaster extends SummonerClass{
     //         super.attacked(obj);
     //     }
     // }
-    noHit = 10;
+    // noHit = 10;
     ro = PI * .5;
-    summons = [Droid, Bot];
+    summons = [Droid, Bot, Roller];
     color = "#fff";
     color2 = "#aaa";
     constructor(id) {
@@ -3582,23 +3653,24 @@ class TheMaster extends SummonerClass{
     shape2 = shapes.get("trapoid");
     onXp() {
         var pets = floor(this.p/5);
-        if(pets < (10 - this.alive.length)) {
-            this.p += 0.1;
+        if(pets < (this.maxSum - this.alive.length)) {
+            this.p += 0.03;
         }
     }
-    rec = 0.1;
+    maxSum = 8;
+    rec = 0.04;
     tickSkill() {
         for(let blob of this.alive) {
             blob.alive = true;
         }
-        if(this.noHit) --this.noHit;
+        // if(this.noHit) --this.noHit;
     }
     nextLevel() {
         for(let blob of this.alive) {
             blob.dead = DEAD;
         }
-        this.shield = true;
-        this.color2 = this.icolor;
+        // this.shield = true;
+        // this.color2 = this.icolor;
         this.p = 10;
     }
 }
@@ -4113,6 +4185,7 @@ function levelName(level) {
                 var pad = pads[gamepads[0]];
                 var A_button = pad?.buttons[0].value;
                 var B_button = pad?.buttons[1].value;
+                var X_button = pad?.buttons[2].value;
                 var Y_button = pad?.buttons[3].value;
             }
             var allDead = mains[0].dead && (mains[1]? mains[1].dead: true);
@@ -4139,7 +4212,7 @@ function levelName(level) {
                 return (blob.team & TEAM.BAD);
             });
 
-            if(Survival && arr.length == 0 && (keys.use("Space") || A_button || buttonClick(restartButton))) {
+            if(Survival && arr.length == 0 && (keys.use("Space") || A_button || X_button || buttonClick(restartButton))) {
                 timeLeft = 0;
             }
             
@@ -4166,13 +4239,13 @@ function levelName(level) {
                     }
                     mains[1].hp = mains[1].xHp;
                     mains[1].dead = 0;
-                    if(!Survival) {
-                        mains[1].spawn();
-                    }
+                    // if(!Survival) {
+                    //     mains[1].spawn();
+                    // }
                 }
-                if(!Survival) {
-                    main.spawn();
-                }
+                // if(!Survival) {
+                //     main.spawn();
+                // }
                 nextLevel();
             }
             }catch(err) {
@@ -4379,6 +4452,13 @@ function nextLevel() {
                 blob.spawn();
                 enemies.push(blob);
                 var blob = new Lost();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 22:
+            for(let i = 0; i < 10; i++) {
+                var blob = new MiniDash();
                 blob.spawn();
                 enemies.push(blob);
             }
