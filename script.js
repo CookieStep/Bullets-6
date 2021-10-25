@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//BMF
+//LOL
 
 const env = {
     SOLOLEARN: Symbol()
@@ -1475,7 +1475,6 @@ class Summoner extends Brain{
     hp = 20;
     s = 2;
     r = 0;
-    m = 5;
     xp = 30;
     ro = 0;
     goal = new Point;
@@ -1514,7 +1513,7 @@ class Summoner extends Brain{
         var ly = this.y + this.s;
 
         var d = 10;
-        var p = 5;
+        var p = 2;
 
         if(this.x < d) {
             var n = (this.x - d)/-d;
@@ -1564,200 +1563,136 @@ class Summoner extends Brain{
         var {player} = this;
         if(player && player.dead) delete this.player;
         if(!player) player = this.getMain();
-        var {goal} = this;
-        if(this.color2 == "#f00") {
-            this.god = true;
-        }else{
-            this.god = false;
-        }
+        // var {goal} = this;
+        // if(this.color2 == "#f00") {
+        //     this.god = true;
+        // }else{
+        //     this.god = false;
+        // }
         switch(this.phase) {
             case 0:
-                goal.x = game.w - this.s/2;
-                goal.y = this.s/2;
-                this.m = 20;
-                this.color2 = "#f00";
-                if(this.toGoal()) {
-                    this.phase = 1;
-                    this.timer = 0;
-                }
-            break;
-            // case 0:
-            //     goal.x = game.w/2;
-            //     goal.y = game.h/2;
-            //     if(this.toGoal()) {
-            //         this.phase = 1;
-            //         this.timer = 0;
-            //     }
-            // break;
-            case 1:
-                this.m = 20;
-                this.color2 = "#f00";
-                goal.x = game.w - this.s/2;
-                goal.y = game.h - this.s/2;
-                if(this.timer++ % 10 == 0) {
+                if(this.time < 100 && this.time % 10 == 0) {
+                    var rad = random(PI2);
                     var blob = new Mover();
-                    Bullet.position(blob, PI, this);
-                    blob.coll = 0;
+                    Bullet.position(blob, rad - PI/8, this);
                     blob.color = this.color;
+                    blob.color2 = this.color2;
+                    blob.coll = 0;
                     enemies.push(blob);
                     sounds.Summon.play();
                 }
-                if(this.toGoal(expert? .4: 1)) {
-                    this.phase = 2;
-                    this.timer = 0;
+                if(this.time >= (expert? 150: 250)) {
+                    this.color2 = "#f70";
                 }
+                if(this.time <= (expert? 175: 250)) {
+                    this.smartMove();
+                }
+                if(this.time == (expert? 200: 300)) {
+                    this.time = 0;
+                    this.phase = 1;
+                }
+                ++this.time;
             break;
-            // case 1:
-            //     ++this.timer;
-            //     goal.x = game.w/2;
-            //     goal.y = game.h/2;
-            //     this.toGoal();
-            //     var a = abs(this.timer % 500 - 250)/100;
-            //     this.burstShot(a * PI);
-            //     if(this.timer == 750) {
-            //         this.phase = 2;
-            //     }
-            // break;
+            case 1:
+                if(this.time < 100 && this.time % 10 == 0) {
+                    var rad = Entity.radian(player, this);
+                    var blob = new Mover();
+                    Bullet.position(blob, rad, this);
+                    blob.color = this.color;
+                    blob.color2 = this.color2;
+                    blob.coll = 0;
+                    blob.tick();
+                    blob.vx *= 20;
+                    blob.vy *= 20;
+                    enemies.push(blob);
+                    sounds.Summon.play();
+                }
+                if(this.time == 100) {
+                    this.color2 = "#f0f";
+                    this.time = 0;
+                    this.phase = 2;
+                }
+                ++this.time;
+            break;
             case 2:
-                this.smartMove();
-                this.m = 5;
-                this.color2 = "#f0f";
-                if(this.timer++ > (expert? 100: 200)) {
+                var dis = Entity.distance(this, player);
+                if(dis > 7) {
+                    this.moveTo(player);
+                    this.m = 20;
+                }else{
+                    this.m = 5;
+                    let e = PI * .25;
+                    let summon = expert? Chill: Mover;
+                    for(let i = 0; i < 8; i++) {
+                        var rad = i * e;
+                        var blob = new summon();
+                        Bullet.position(blob, rad, this);
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        blob.force = true;
+                        if(expert) blob.spd *= 1.5;
+                        blob.coll = 0;
+                        enemies.push(blob);
+                    }
+                    sounds.Summon.play();
                     this.phase = 3;
-                    this.timer = 0;
                 }
             break;
             case 3:
-                var v = expert? 225: 100;
                 this.smartMove();
-                this.m = 5;
-                this.color2 = "#f0f";
-                if(++this.timer % v == 0) {
-                    var blob = new Mover();
-                    var rad = Entity.radian(player, this);
-                    Bullet.position(blob, rad + PI/8, this);
-                    blob.color = this.color;
-                    blob.coll = 0;
-                    enemies.push(blob);
-                    var blob = new Mover();
-                    Bullet.position(blob, rad - PI/8, this);
-                    blob.color = this.color;
-                    blob.coll = 0;
-                    enemies.push(blob);
-                    sounds.Summon.play();
-                }
-                if(expert) {
-                    var a = this.timer % (v * 2);
-                    if(a > (v * 2) - 50) {
-                        // this.moveTo(main, .5);
-                        var rad = Entity.radian(player, this);
-                        this.rad = rad;
-                        if(a % 10 == 0) {
-                            var blob = new Chill();
-                            blob.coll = 0;
-                            Bullet.position(blob, rad + PI/8, this);
-                            blob.color = this.color;
-                            blob.color2 = this.color2;
-                            blob.force = true;
-                            blob.spd *= 1.2;
-                            enemies.push(blob);
-                            sounds.Summon.play();
+                if(this.time == 150) {
+                    let h = (innerHeight/scale)/(11);
+                    let w = innerWidth/scale - .5;
+                    let summon = Mover;
+                    for(let i = 0; i < 10; i++) {
+                        let a = i % 2 == 0;
+                        if(expert) {
+                            if(a) summon = Mover;
+                            else summon = Chill;
                         }
-                    }
-                }
-                if(this.timer >= v * 5) {
-                    this.phase = 4;
-                }
-            break;
-            case 4:
-                this.m = 20;
-                this.color2 = "#f00";
-                goal.x = this.s/2;
-                goal.y = this.s/2;
-                if(this.toGoal()) {
-                    this.phase = 5;
-                    this.timer = 0;
-                }
-            break;
-            case 5:
-                this.m = 20;
-                this.color2 = "#f00";
-                goal.x = this.s/2;
-                goal.y = game.h - this.s/2;
-                if(this.timer++ % 10 == 0) {
-                    var blob = new Mover();
-                    Bullet.position(blob, 0, this);
-                    blob.color = this.color;
-                    blob.coll = 0;
-                    enemies.push(blob);
-                    sounds.Summon.play();
-                }
-                if(this.toGoal(expert? .4: 1)) {
-                    this.phase = 6;
-                    this.timer = 0;
-                }
-            break;
-            case 6:
-                var v = expert? 225: 150;
-                this.smartMove();
-                this.m = 5;
-                this.color2 = "#f0f";
-                if(++this.timer % v == 0) {
-                    var blob = new Mover();
-                    var rad = Entity.radian(player, this);
-                    Bullet.position(blob, rad + PI/8, this);
-                    blob.color = this.color;
-                    blob.coll = 0;
-                    enemies.push(blob);
-                    var blob = new Mover();
-                    Bullet.position(blob, rad - PI/8, this);
-                    blob.color = this.color;
-                    blob.coll = 0;
-                    enemies.push(blob);
-                    sounds.Summon.play();
-                }
-                if(expert) {
-                    var a = this.timer % (v * 2);
-                    if(a > (v * 2) - 50) {
-                        // this.moveTo(main, .5);
-                        var rad = Entity.radian(player, this);
-                        this.rad = rad;
-                        if(a % 10 == 0) {
-                            var blob = new Chill();
-                            Bullet.position(blob, rad + PI/8, this);
-                            blob.coll = 0;
-                            blob.color = this.color;
-                            blob.color2 = this.color2;
-                            blob.force = true;
-                            blob.spd *= 1.2;
-                            enemies.push(blob);
-                            sounds.Summon.play();
+                        var blob = new summon();
+                        blob.coll = 0;
+                        blob.x = expert? .5: (a? .5: w);
+                        blob.y = h * i + .5;
+                        blob.r = expert? 0: (a? 0: PI);
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        if(summon == Chill) {
+                            // blob.force = true;
+                            blob.spd *= 1.5; 
                         }
+                        enemies.push(blob);
+                        if(expert) {
+                            if(a) summon = Chill;
+                            else summon = Mover;
+                        }else continue;
+                        var blob = new summon();
+                        blob.coll = 0;
+                        blob.x = w;
+                        blob.y = h * i;
+                        blob.r = PI;
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        if(summon == Chill) {
+                            // blob.force = true;
+                            blob.spd *= 1.5; 
+                        }
+                        enemies.push(blob);
                     }
-                }
-                if(this.timer >= v * 5) {
+                    this.color2 = "#f0f";
+                    sounds.BigMagic.play();
+                }else if(this.time == 500) {
+                    this.time = 0;
                     this.phase = 0;
                 }
+                if(this.time == 50) {
+                    this.color2 = "#666";
+                }
+                ++this.time;
             break;
         }
     }
-    // burstShot(o=0, u) {
-    //     if(isNaN(u) || u <= 0) u = PI/2;
-    //     for(let i = 0; i < PI2; i += u) {
-    //         var blob = new Bullet(this, i + o);
-    //         blob.coll = 0;
-    //         blob.time = 10;
-    //         enemies.push(blob);
-    //     }
-    // }
-    // burstShot2(o=0, u) {
-    //     if(isNaN(u) || u <= 0) u = PI;
-    //     for(let i = 0; i < PI2; i += u) {
-    //         var blob = new Mover();
-    //         Bullet.position(blob, i + o, this);
-    //         enemies.push(blob);
-    //     }
-    // }
+    time = 0;
     phase = 0;
     color = "#ff0";
     color2 = "#f0f";
@@ -2993,6 +2928,7 @@ class Tracker extends Chill{
         if(!obj2.x) obj2 = enemy;
         this.move(Entity.radian(obj2, obj), mult);
     }
+    atk = 1.5;
     nohit = TEAM.BULLET;
     spd = 0.1;
     friction = 0.99;
@@ -3098,7 +3034,7 @@ class TheMagician extends SummonerClass{
     summons = [Tracker];
     color = "#5f5";
     color2 = "#cfc";
-    rec = 0.15;
+    rec = 0.2;
     shape2 = shapes.get("tophat");
     constructor(id) {
         super(id);
