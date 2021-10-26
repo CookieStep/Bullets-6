@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//LOL
+//MLG
 
 const env = {
     SOLOLEARN: Symbol()
@@ -1478,18 +1478,6 @@ class Summoner extends Brain{
     xp = 30;
     ro = 0;
     goal = new Point;
-    draw() {
-        if(this.color2 == "#f00") {
-            var {goal} = this;
-            ctx.beginPath();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "#f00";
-            ctx.moveTo((this.x + this.s * .5) * scale, (this.y + this.s * .5) * scale);
-            ctx.lineTo(goal.x * scale, goal.y * scale);
-            ctx.stroke();
-        }
-        super.draw();
-    }
     constructor() {
         super();
         if(expert) this.spd *= 1.5;
@@ -1571,7 +1559,7 @@ class Summoner extends Brain{
         // }
         switch(this.phase) {
             case 0:
-                if(this.time < 100 && this.time % 10 == 0) {
+                if(this.time < 100 && this.time % (expert? 10: 20) == 0) {
                     var rad = random(PI2);
                     var blob = new Mover();
                     Bullet.position(blob, rad - PI/8, this);
@@ -1594,7 +1582,7 @@ class Summoner extends Brain{
                 ++this.time;
             break;
             case 1:
-                if(this.time < 100 && this.time % 10 == 0) {
+                if(this.time < 100 && this.time % (expert? 10: 20) == 0) {
                     var rad = Entity.radian(player, this);
                     var blob = new Mover();
                     Bullet.position(blob, rad, this);
@@ -3864,7 +3852,7 @@ onload = () => {
         }
         if(keys.use("Escape") && (keys.has("ControlLeft"))) {
             keys.clear();
-            if(alert("Are you sure you want to reset?")) {
+            if(confirm("Are you sure you want to reset?")) {
                 saveData.level = 0;
                 saveData.levelE = 0;
                 saveData.save();
