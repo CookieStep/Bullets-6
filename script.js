@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//MLG
+//DBB
 
 const env = {
     SOLOLEARN: Symbol()
@@ -222,6 +222,7 @@ var TEAM = {
 var DEAD = 10;
 {
     class Path extends Path2D{
+        /**@param {(path: Path2D) => void} path*/
         constructor(path) {
             if(typeof path == "function") {
                 super();
@@ -313,6 +314,41 @@ var DEAD = 10;
         path.closePath();
         path.rotation = PI / 2;
     }));
+    shapes.set("dual-arrow", new Path(path => {
+        var mid = 1/2;
+        var top = 2/16;
+        var btm = 9/10;
+        var spl = 1/2;
+        var wid = 14/16;
+        var spr = 11/16;
+        path.moveTo(mid, top);
+        path.lineTo(wid, spl);
+        path.lineTo(1 - wid, spl);
+        path.closePath();
+        var a = spl - top;
+        top += a;
+        spl += a;
+        btm += a;
+        path.moveTo(mid, top);
+        path.lineTo(wid, spl);
+        path.lineTo(1 - wid, spl);
+        path.closePath();
+    }));
+    shapes.set("pointer", new Path(path => {
+        var mid = 1/2;
+        var top = 2/10;
+        var btm = 8/10;
+        // var spl = 1/2;
+        var wid = 14/16;
+        // var spr = 11/16;
+        path.moveTo(mid, top);
+        path.lineTo(wid, btm);
+        // spr = 1 - spr;
+        wid = 1 - wid;
+        path.lineTo(wid, btm);
+        path.closePath();
+        path.rotation = PI / 2;
+    }));
     shapes.set("arrow-box", new Path(path => {
         var mid = 1/2;
         var wid = 1/8;
@@ -384,6 +420,34 @@ var DEAD = 10;
         ctx.lineTo(1.1, 1.0);
         ctx.closePath();
     }));
+    shapes.set("blob", new Path(ctx => {
+        ctx.moveTo(.8, 1);
+        ctx.quadraticCurveTo(1, 1, 1, .8);
+        ctx.quadraticCurveTo(1.1, .1, .5, .1);
+        ctx.quadraticCurveTo(-.1, .1, 0, .8);
+        ctx.quadraticCurveTo(0, 1, .2, 1);
+        ctx.closePath();
+    }));
+    shapes.set("snake-head", new Path(ctx => {
+        var a = PI * 0.25;
+        var b = PI * 1.75;
+        ctx.arc(.5, .5, .5, a, b);
+        ctx.lineTo(.7, .5);
+        ctx.closePath();
+    }));
+    shapes.set("snake-top", new Path(ctx => {
+        var a = PI * 0.25;
+        var b = PI * 1.75;
+        ctx.arc(.5, .5, .5, a, b);
+        ctx.lineTo(.7, .5);
+        ctx.closePath();
+        ctx.rect(0, 0, .5, 1);
+    }));
+    shapes.set("snake-tail", new Path(ctx => {
+        var a = PI * 0.5;
+        var b = PI * 1.5;
+        ctx.ellipse(1, .5, 1, .5, 0, a, b);
+    }));
 }
 class Entity{
     constructor() {
@@ -423,7 +487,7 @@ class Entity{
         if(this.hp <= 0) {
             ++this.dead;
         }
-        for(let [enemy, number] of this.inv) {
+        if(this.inv) for(let [enemy, number] of this.inv) {
             if(--number) this.inv.set(enemy, number);
             else this.inv.delete(enemy);
         }
@@ -1036,6 +1100,7 @@ class Walker extends Mover{
     color = "#ffa";
     shape = shapes.get("square.4");
     color2 = "#aa0";
+    shape2 = shapes.get("pointer");
     spd = .05;
     constructor() {
         super();
@@ -1182,513 +1247,6 @@ class Pounder extends Enemy{
     color = "#ff0";
     shape = shapes.get("trapoid");
 }
-class Dasher extends Mover{
-    static name = "Dasher";
-    static type = "Miniboss";
-    team = TEAM.BOSS + TEAM.BAD;
-    hits = TEAM.GOOD + TEAM.BULLET;
-    coll = 0;
-    s = 1.5;
-    m = 1;
-    hp  = 10;
-    xHp = 10;
-    phase = 0;
-    register(what) {
-        this.registerPlayer(what);
-    }
-    tick() {
-        var {player} = this;
-        if(player && player.dead) delete this.player;
-        if(!player) player = this.getMain();
-        var m = this.hp/this.xHp;
-        switch(this.phase) {
-            case 0:
-                this.spd = expert? .2: .075;
-                this.moveTo(player);
-                this.r = atan(this.vy, this.vx);
-                // this.nocoll = this.hits;
-                this.m = 10
-                if(Entity.distance(this, player) < 5) {
-                    this.phase = 1;
-                    this.flash = 0;
-                }
-            break;
-            case 1:
-                ++this.flash;
-                this.m = 10
-                // this.nocoll = this.hits;
-                this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
-                if(expert || this.flash < 30) {
-                    this.r = Entity.radian(player, this);
-                }
-                if(this.flash >= (expert? 25: 40)) {
-                    this.phase = 2;
-                    this.spd = 0.6;
-                    this.timer = 0;
-                    sounds.Dash.play();
-                }
-            break;
-            case 2:
-                this.timer++;
-                var b = 7;
-                var c = expert? 0: (10 * m);
-                this.m = 0.1;
-                // this.nocoll = 0;
-                if(this.timer < b) {
-                    if(expert) this.moveTo(player);
-                    else this.move(this.r);
-                    // this.move(this.r);
-                }else if(this.timer < b + c) {
-                    var a = this.timer - b;
-                    this.color = `hsl(0, ${a * 2}%, 50%)`;
-                }else{
-                    if(expert) {
-                        var u = PI2/8;
-                        for(let i = 0; i < PI2; i += u) {
-                            var blob = new Bullet(this, i);
-                            blob.color = "#f00";
-                            // blob.coll = 0;
-                            blob.time = 30;
-                            blob.spd = 0.5;
-                            // blob.s *= 2;
-                            enemies.push(blob);
-                        }
-                        sounds.Explode.play();
-                    }
-                    this.phase = 0;
-                    this.color = "#f00";
-                }
-                this.r = atan(this.vy, this.vx);
-            break;
-        }
-    }
-    attacked(obj) {
-        super.attacked(obj);
-
-        var a = 5 * obj.atk;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
-    }
-    shape = shapes.get("square.4");
-    color = "#f00";
-    shape2 = shapes.get("arrow-box");
-    color2 = "#fff";
-    xp = 15;
-}
-class Squish extends Enemy{
-    static name = "Squisher";
-    static type = "Boss 2";
-    color = "#f07";
-    color2 = "#f80";
-    shape  = shapes.get("trapoid");
-    shape2 = shapes.get("trapoid");
-    ro = PI * .5;
-    xHp = 20;
-    hp = 20;
-    s = 2;
-    phase = 0;
-    ticks = 0;
-    r = 0;
-    register(enemy) {
-        this.registerPlayer(enemy);
-    }
-    attacked(obj) {
-        super.attacked(obj);
-
-        var a = 10 * obj.atk;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
-    }
-    tick() {
-        var {player} = this;
-        if(player && player.dead) delete this.player;
-        if(!player) player = this.getMain();
-        var p = this.ro;
-        switch(this.phase) {
-            case 0:
-                ++this.ticks;
-                this.m = 10
-                // this.nocoll = this.hits;
-                this.color = `hsl(332, 50%, ${(this.ticks % 10) * 5 + 50}%)`;
-                if(this.ticks < 40) {
-                    this.r += random(.3);
-                }
-                var m = expert? 5: 15;
-                var l = this.ticks % m;
-                if(l == 0) {
-                    for(let i = 0; i < 2; i++) {
-                        var blob = new Bullet(this, this.r + i * PI);
-                        blob.m = 0.01;
-                        enemies.push(blob);
-                    }
-                    sounds.MachineGun.play();
-                }
-                if(l == 7) {
-                    sounds.MachineGun.play();
-                }
-                if(expert && l == 2) {
-                    sounds.MachineGun.play();
-                }
-                if(this.ticks == 50) {
-                    this.color = "#f07";
-                    this.phase = 1;
-                    this.ticks = 0;
-                    this.a = 0;
-                    this.b = 0;
-                    this.spd = expert? 0.3: 0.15;
-                }
-            break;
-            case 1:
-                ++this.ticks;
-                if(expert || this.ticks < 60) {
-                    this.move(this.r + p);
-                }
-                if(this.hitWall) {
-                    this.r = atan(this.vy, this.vx) - p;
-                }
-                if(this.ticks == 75) {
-                    this.phase = 2;
-                    this.ticks = 0;
-                }
-            break;
-            case 2:
-                ++this.ticks;
-                if(this.ticks % (expert? 4: 8) == 0 && this.ticks <= (expert? 16: 32)) {
-                    var a = this.ticks * (expert? .25: .125);
-                    let blob = new Turret();
-                    var rad = a * p;
-                    Bullet.position(blob, rad + PI/8, this);
-                    blob.color = this.color;
-                    blob.color2 = this.color2;
-                    blob.coll = 0;
-                    blob.mo = PI/8;
-                    blob.vx = cos(rad) * .5;
-                    blob.vy = sin(rad) * .5;
-                    blob.fire = blob.shoot;
-                    blob.shoot = rad => {
-                        var bullet = blob.fire(rad);
-                        if(bullet) bullet.m = 0.01;
-                    } 
-                    enemies.push(blob);
-                    sounds.BotSummon.play();
-                }
-                if(this.ticks == (expert? 50: 75)) {
-                    this.phase = 3;
-                    this.ticks = 0;
-                    for(let rad = 0; rad < PI2; rad += p) {
-                        var blob = new MafiaGunner();
-                        Bullet.position(blob, rad + PI/8, this);
-                        blob.r = 0;
-                        blob.color = this.color;
-                        blob.color2 = this.color2;
-                        blob.color3 = this.color;
-                        blob.coll = 0;
-                        blob.mo = PI/8;
-                        blob.vx = cos(rad) * .5;
-                        blob.vy = sin(rad) * .5;
-                        enemies.push(blob);
-                    }
-                    sounds.BotSummon.play();
-                }
-            break;
-            case 3:
-                ++this.ticks;
-                if(this.ticks < 40) {
-                    this.r = Entity.radian(player, this) - p;
-                }
-                if(this.ticks == 50) {
-                    this.phase = 4;
-                    this.ticks = 0;
-                    this.spd = expert? 0.3: 0.15;
-                    this.m = 0.1;
-                    sounds.Dash.play();
-                }
-            break;
-            case 4:
-                ++this.ticks;
-                if(this.ticks % 20 == 0) {
-                    sounds.Dash.play();
-                }
-                if(this.ticks % 20 < 10) {
-                    this.move(this.r + p);
-                }else{
-                    this.r = Entity.radian(player, this) - p;
-                }
-                if(this.hitWall) {
-                    this.r = atan(this.vy, this.vx) - p;
-                }
-                if(this.ticks == 80) {
-                    this.phase = 5;
-                    this.ticks = 0;
-                    this.m = 1;
-                }
-            break;
-            case 5:
-                ++this.ticks;
-                // if(this.ticks % 4 == 0 && this.ticks <= 32) {
-                //     var a = this.ticks * .125;
-                //     var blob = new Bomb();
-                //     var rad = a * p;
-                //     Bullet.position(blob, rad + PI/8, this);
-                //     blob.color = this.color;
-                //     blob.coll = 0;
-                //     blob.mo = PI/8;
-                //     blob.vx = cos(rad) * .5;
-                //     blob.vy = sin(rad) * .5;
-                //     enemies.push(blob);
-                // }
-                if(this.ticks == 60) {
-                    this.phase = 0;
-                    this.ticks = 0;
-                    for(let rad = 0; rad < PI2; rad += p) {
-                        var blob = new Pounder();
-                        Bullet.position(blob, rad + PI/8, this);
-                        blob.r = 0;
-                        blob.color = this.color;
-                        blob.color2 = this.color2;
-                        blob.color3 = this.color;
-                        blob.coll = 0;
-                        blob.mo = PI/8;
-                        blob.vx = cos(rad) * .5;
-                        blob.vy = sin(rad) * .5;
-                        enemies.push(blob);
-                    }
-                    sounds.BotSummon.play();
-                }
-            break;
-        }
-    }
-}
-class Summoner extends Brain{
-    team = TEAM.BOSS + TEAM.BAD;
-    hits = TEAM.GOOD;
-    coll = 0;
-    xHp = 20;
-    hp = 20;
-    s = 2;
-    r = 0;
-    xp = 30;
-    ro = 0;
-    goal = new Point;
-    constructor() {
-        super();
-        if(expert) this.spd *= 1.5;
-    }
-    attacked(obj) {
-        super.attacked(obj);
-        if(this.god) return;
-        
-        var a = 7 * obj.atk;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
-    }
-    smartMove() {
-        this.rad += (srand() - .5)/4;
-        this.brainPoints.push([this.rad, this.wander]);
-        var lx = this.x + this.s;
-        var ly = this.y + this.s;
-
-        var d = 10;
-        var p = 2;
-
-        if(this.x < d) {
-            var n = (this.x - d)/-d;
-            n **= p;
-            this.brainPoints.push([PI, -n]);
-        }
-        if(lx > game.w - d) {
-            var dis = game.w - lx;
-            var n = (dis - d)/-d;
-            n **= p;
-            this.brainPoints.push([0, -n]);
-        }
-        if(this.y < d) {
-            var n = (this.y - d)/-d;
-            n **= p;
-            this.brainPoints.push([PI * 3/2, -n]);
-        }
-        if(ly > game.h - d) {
-            var dis = game.h - ly;
-            var n = (dis - d)/-d;
-            n **= p;
-            this.brainPoints.push([PI/2, -n]);
-        }
-        this.brainMove();
-    }
-    toGoal(mult) {
-        var {goal} = this;
-        if(Entity.distance(this, goal) > 1) {
-            this.moveTo(goal, mult);
-        }else return 1;
-    }
-    register(enemy) {
-        this.registerPlayer(enemy);
-        if(!(enemy.team & TEAM.GOOD)) return;
-        var dis = Entity.distance(this, enemy);
-        var d = 10;
-        if(dis < d) {
-            var n = (dis - d)/-d;
-            var rad = Entity.radian(this, enemy);
-            n **= .5;
-            // if(expert) this.brainPoints.push([rad, n * 2]); 
-            // else this.brainPoints.push([rad + PI, -n]);
-            this.brainPoints.push([rad + PI, -n]);
-        }
-    }
-    tick() {
-        var {player} = this;
-        if(player && player.dead) delete this.player;
-        if(!player) player = this.getMain();
-        // var {goal} = this;
-        // if(this.color2 == "#f00") {
-        //     this.god = true;
-        // }else{
-        //     this.god = false;
-        // }
-        switch(this.phase) {
-            case 0:
-                if(this.time < 100 && this.time % (expert? 10: 20) == 0) {
-                    var rad = random(PI2);
-                    var blob = new Mover();
-                    Bullet.position(blob, rad - PI/8, this);
-                    blob.color = this.color;
-                    blob.color2 = this.color2;
-                    blob.coll = 0;
-                    enemies.push(blob);
-                    sounds.Summon.play();
-                }
-                if(this.time >= (expert? 150: 250)) {
-                    this.color2 = "#f70";
-                }
-                if(this.time <= (expert? 175: 250)) {
-                    this.smartMove();
-                }
-                if(this.time == (expert? 200: 300)) {
-                    this.time = 0;
-                    this.phase = 1;
-                }
-                ++this.time;
-            break;
-            case 1:
-                if(this.time < 100 && this.time % (expert? 10: 20) == 0) {
-                    var rad = Entity.radian(player, this);
-                    var blob = new Mover();
-                    Bullet.position(blob, rad, this);
-                    blob.color = this.color;
-                    blob.color2 = this.color2;
-                    blob.coll = 0;
-                    blob.tick();
-                    blob.vx *= 20;
-                    blob.vy *= 20;
-                    enemies.push(blob);
-                    sounds.Summon.play();
-                }
-                if(this.time == 100) {
-                    this.color2 = "#f0f";
-                    this.time = 0;
-                    this.phase = 2;
-                }
-                ++this.time;
-            break;
-            case 2:
-                var dis = Entity.distance(this, player);
-                if(dis > 7) {
-                    this.moveTo(player);
-                    this.m = 20;
-                }else{
-                    this.m = 5;
-                    let e = PI * .25;
-                    let summon = expert? Chill: Mover;
-                    for(let i = 0; i < 8; i++) {
-                        var rad = i * e;
-                        var blob = new summon();
-                        Bullet.position(blob, rad, this);
-                        blob.color = this.color;
-                        blob.color2 = this.color2;
-                        blob.force = true;
-                        if(expert) blob.spd *= 1.5;
-                        blob.coll = 0;
-                        enemies.push(blob);
-                    }
-                    sounds.Summon.play();
-                    this.phase = 3;
-                }
-            break;
-            case 3:
-                this.smartMove();
-                if(this.time == 150) {
-                    let h = (innerHeight/scale)/(11);
-                    let w = innerWidth/scale - .5;
-                    let summon = Mover;
-                    for(let i = 0; i < 10; i++) {
-                        let a = i % 2 == 0;
-                        if(expert) {
-                            if(a) summon = Mover;
-                            else summon = Chill;
-                        }
-                        var blob = new summon();
-                        blob.coll = 0;
-                        blob.x = expert? .5: (a? .5: w);
-                        blob.y = h * i + .5;
-                        blob.r = expert? 0: (a? 0: PI);
-                        blob.color = this.color;
-                        blob.color2 = this.color2;
-                        if(summon == Chill) {
-                            // blob.force = true;
-                            blob.spd *= 1.5; 
-                        }
-                        enemies.push(blob);
-                        if(expert) {
-                            if(a) summon = Chill;
-                            else summon = Mover;
-                        }else continue;
-                        var blob = new summon();
-                        blob.coll = 0;
-                        blob.x = w;
-                        blob.y = h * i;
-                        blob.r = PI;
-                        blob.color = this.color;
-                        blob.color2 = this.color2;
-                        if(summon == Chill) {
-                            // blob.force = true;
-                            blob.spd *= 1.5; 
-                        }
-                        enemies.push(blob);
-                    }
-                    this.color2 = "#f0f";
-                    sounds.BigMagic.play();
-                }else if(this.time == 500) {
-                    this.time = 0;
-                    this.phase = 0;
-                }
-                if(this.time == 50) {
-                    this.color2 = "#666";
-                }
-                ++this.time;
-            break;
-        }
-    }
-    time = 0;
-    phase = 0;
-    color = "#ff0";
-    color2 = "#f0f";
-    shape2 = shapes.get("square.4");
-    shape = shapes.get("bullet");
-    static name = "Summoner";
-    static type = "Boss";
-}
 class Wander extends Walker{
     ro = PI/2;
     tick() {
@@ -1734,10 +1292,11 @@ class SpawnDust extends Xp{
     draw1() {}
 }
 class Spawner extends Point{
-    constructor(boss) {
+    constructor(boss, add=true) {
         super(boss.x + boss.s/2, boss.y - boss.s/2);
         this.team = boss.team;
         this.boss = boss;
+        this.add = add;
     }
     s = 0;
     coll = 0;
@@ -1753,7 +1312,7 @@ class Spawner extends Point{
         this.time += 1;
         if(this.time == 100) {
             enemies.push(this.boss);
-            bosses.add(this.boss);
+            if(this.add) bosses.add(this.boss);
             this.dead = DEAD;
         }
         // if(this.time >= 150) {
@@ -2044,6 +1603,7 @@ class MafiaInvasion extends Mafia{
         }
 
     }
+    movement() {}
     tick() {
         var n = this.hp;
         if(n > 10) n = 10;
@@ -2158,26 +1718,223 @@ class MafiaCharger extends Mafia{
     spd = 0.3;
     friction = 0.99;
 }
-class MiniDash extends Dasher{
-    spawn() {
-        var d = 10;
-        var I = this;
-        do{
-            this.x = random(game.w - this.s);
-            this.y = random(game.h - this.s);
-        }while(close());
-        function close() {
-            for(let blob of enemies) {
-                if(blob instanceof Player && Entity.distance(blob, I) < d) {
-                    return true;
-                }
-                if(Entity.hitTest(I, blob) && Entity.isTouching(blob, I)) {
-                    return true;
-                }
+class Spinner extends Chill{
+    tick() {
+        super.tick();
+        this.rot += PI/64;
+        this.r = this.rot;
+        if(++this.time % 4 == 0) {
+            for(let i = 0; i < 2; i++) {
+                var blob = new Bullet(this, this.r + i * PI);
+                blob.m = 0.01;
+                blob.hp = 0;
+                blob.spd *= .7;
+                blob.nocoll = TEAM.BAD;
+                enemies.push(blob);
             }
         }
-        return this;
     }
+    color = "#ccc";
+    color2 = "#f77";
+    shape = shapes.get("square-2");
+    rot = 0;
+    time = 0;
+    sd = 15;
+}
+class Lost extends Brain{
+    register(enemy) {
+        if(!expert) return;
+        if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team)) {
+            var dis = Entity.distance(this, enemy);
+            var d = 10;
+            if(dis < d) {
+                var n = (dis - d)/-d;
+                var rad = Entity.radian(enemy, this);
+                n **= 1;
+                this.brainPoints.push([rad, n]);
+            }
+        }else{//Run away
+            var dis = Entity.distance(this, enemy);
+            var d = 2;
+            if(dis < d) {
+                var n = (dis - d)/-d;
+                var rad = Entity.radian(this, enemy);
+                n **= .5;
+                this.brainPoints.push([rad, n * 2]);
+            }
+        }
+    }
+    tick() {
+        super.tick();
+        this.r = atan(this.vy, this.vx);
+    }
+    color = "#f5a";
+    shape = shapes.get("spikebox");
+}
+class Slime extends Enemy{
+    constructor(ver=1) {
+        super();
+        this.spd *= 10;
+        this.version = ver;
+        if(expert) {
+            this.a *= .3;
+            this.b *= .3;
+            this.spd *= .5;
+        }
+        if(ver == 2) {
+            this.s = .5;
+            this.spd *= .75;
+            this.a *= .5;
+            this.b *= .5;
+        }
+    }
+    a = 20;
+    b = 60;
+    tick() {
+        this.r = 0;
+
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = this.getMain();
+        if(this.time) --this.time;
+        else{
+            this.moveTo(player);
+            this.time = floor(random(this.b, this.a)) + 1;
+        }
+    }
+    update() {
+        super.update();
+        if(this.dead && this.version == 1) {
+            this.dead = DEAD;
+        }
+    }
+    explode() {
+        super.explode();
+        if(this.version == 1) {        
+            sounds.Summon.play();
+            var u = PI * .5;
+            var o = random(PI2);
+            for(let i = 0; i < PI2; i += u) {
+                var blob = new Slime(2);
+                Xp.position(blob, i, this);
+                blob.vx = cos(i) * .2;
+                blob.vy = sin(i) * .2;
+                blob.version = 2;
+                enemies.push(blob);
+            }
+        }
+    }
+    shape = shapes.get("blob");
+    color = "#afa";
+    version = 1;
+}
+class Runner extends Mover{
+    constructor() {
+        super();
+        this.spd *= 1.5;
+    }
+    color = "#7ff";
+    color2 = "#cff";
+    shape2 = shapes.get("dual-arrow");
+}
+class Dasher extends Mover{
+    static name = "Dasher";
+    static type = "Miniboss";
+    team = TEAM.BOSS + TEAM.BAD;
+    hits = TEAM.GOOD + TEAM.BULLET;
+    coll = 0;
+    s = 1.5;
+    m = 1;
+    hp  = 10;
+    xHp = 10;
+    phase = 0;
+    register(what) {
+        this.registerPlayer(what);
+    }
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = this.getMain();
+        var m = this.hp/this.xHp;
+        switch(this.phase) {
+            case 0:
+                this.spd = expert? .2: .075;
+                this.moveTo(player);
+                this.r = atan(this.vy, this.vx);
+                // this.nocoll = this.hits;
+                this.m = 10
+                if(Entity.distance(this, player) < 5) {
+                    this.phase = 1;
+                    this.flash = 0;
+                }
+            break;
+            case 1:
+                ++this.flash;
+                this.m = 10
+                // this.nocoll = this.hits;
+                this.color = `hsl(0, ${(this.flash % 10) * 10}%, 50%)`;
+                if(expert || this.flash < 30) {
+                    this.r = Entity.radian(player, this);
+                }
+                if(this.flash >= (expert? 25: 40)) {
+                    this.phase = 2;
+                    this.spd = 0.6;
+                    this.timer = 0;
+                    sounds.Dash.play();
+                }
+            break;
+            case 2:
+                this.timer++;
+                var b = 7;
+                var c = expert? 0: (10 * m);
+                this.m = 0.1;
+                // this.nocoll = 0;
+                if(this.timer < b) {
+                    if(expert) this.moveTo(player);
+                    else this.move(this.r);
+                    // this.move(this.r);
+                }else if(this.timer < b + c) {
+                    var a = this.timer - b;
+                    this.color = `hsl(0, ${a * 2}%, 50%)`;
+                }else{
+                    if(expert) {
+                        var u = PI2/8;
+                        for(let i = 0; i < PI2; i += u) {
+                            var blob = new Bullet(this, i);
+                            blob.color = "#f00";
+                            // blob.coll = 0;
+                            blob.time = 30;
+                            blob.spd = 0.5;
+                            // blob.s *= 2;
+                            enemies.push(blob);
+                        }
+                        sounds.Explode.play();
+                    }
+                    this.phase = 0;
+                    this.color = "#f00";
+                }
+                this.r = atan(this.vy, this.vx);
+            break;
+        }
+    }
+    attacked(obj) {
+        super.attacked(obj);
+
+        var a = 5 * obj.atk;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            Xp.position(blob, i * PI2/a + o, this);
+            exp.push(blob);
+        }
+    }
+    shape = shapes.get("square.4");
+    color = "#f00";
+    shape2 = shapes.get("arrow-box");
+    color2 = "#fff";
+    xp = 15;
+}
+class MiniDash extends Dasher{
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
@@ -2251,58 +2008,569 @@ class MiniDash extends Dasher{
     s = 1;
     mini = true;
 }
-class Spinner extends Chill{
-    tick() {
-        super.tick();
-        this.rot += PI/64;
-        this.r = this.rot;
-        if(++this.time % 4 == 0) {
-            for(let i = 0; i < 2; i++) {
-                var blob = new Bullet(this, this.r + i * PI);
-                blob.m = 0.01;
-                blob.hp = 0;
-                blob.spd *= .7;
-                blob.nocoll = TEAM.BAD;
-                enemies.push(blob);
-            }
-        }
-    }
-    color = "#ccc";
-    color2 = "#f77";
-    shape = shapes.get("square-2");
-    rot = 0;
-    time = 0;
-    sd = 15;
-}
-class Lost extends Brain{
+class Squish extends Enemy{
+    static name = "Squisher";
+    static type = "Boss 2";
+    color = "#f07";
+    color2 = "#f80";
+    shape  = shapes.get("trapoid");
+    shape2 = shapes.get("trapoid");
+    ro = PI * .5;
+    xHp = 20;
+    hp = 20;
+    s = 2;
+    phase = 0;
+    ticks = 0;
+    r = 0;
     register(enemy) {
-        if(!expert) return;
-        if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team)) {
-            var dis = Entity.distance(this, enemy);
-            var d = 10;
-            if(dis < d) {
-                var n = (dis - d)/-d;
-                var rad = Entity.radian(enemy, this);
-                n **= 1;
-                this.brainPoints.push([rad, n]);
-            }
-        }else{//Run away
-            var dis = Entity.distance(this, enemy);
-            var d = 2;
-            if(dis < d) {
-                var n = (dis - d)/-d;
-                var rad = Entity.radian(this, enemy);
-                n **= .5;
-                this.brainPoints.push([rad, n * 2]);
-            }
+        this.registerPlayer(enemy);
+    }
+    attacked(obj) {
+        super.attacked(obj);
+
+        var a = 10 * obj.atk;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            Xp.position(blob, i * PI2/a + o, this);
+            exp.push(blob);
         }
     }
     tick() {
-        super.tick();
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = this.getMain();
+        var p = this.ro;
+        switch(this.phase) {
+            case 0:
+                ++this.ticks;
+                this.m = 10
+                // this.nocoll = this.hits;
+                this.color = `hsl(332, 50%, ${(this.ticks % 10) * 5 + 50}%)`;
+                if(this.ticks < 40) {
+                    this.r += random(.3);
+                }
+                var m = expert? 5: 15;
+                var l = this.ticks % m;
+                if(l == 0) {
+                    for(let i = 0; i < 2; i++) {
+                        var blob = new Bullet(this, this.r + i * PI);
+                        blob.m = 0.01;
+                        enemies.push(blob);
+                    }
+                    sounds.MachineGun.play();
+                }
+                if(l == 7) {
+                    sounds.MachineGun.play();
+                }
+                if(expert && l == 2) {
+                    sounds.MachineGun.play();
+                }
+                if(this.ticks == 50) {
+                    this.color = "#f07";
+                    this.phase = 1;
+                    this.ticks = 0;
+                    this.a = 0;
+                    this.b = 0;
+                    this.spd = expert? 0.3: 0.15;
+                }
+            break;
+            case 1:
+                ++this.ticks;
+                if(expert || this.ticks < 60) {
+                    this.move(this.r + p);
+                }
+                if(this.hitWall) {
+                    this.r = atan(this.vy, this.vx) - p;
+                }
+                if(this.ticks == 75) {
+                    this.phase = 2;
+                    this.ticks = 0;
+                }
+            break;
+            case 2:
+                ++this.ticks;
+                if(this.ticks % (expert? 4: 8) == 0 && this.ticks <= (expert? 16: 32)) {
+                    var a = this.ticks * (expert? .25: .125);
+                    let blob = new Turret();
+                    var rad = a * p;
+                    Bullet.position(blob, rad + PI/8, this);
+                    blob.color = this.color;
+                    blob.color2 = this.color2;
+                    blob.coll = 0;
+                    blob.mo = PI/8;
+                    blob.vx = cos(rad) * .5;
+                    blob.vy = sin(rad) * .5;
+                    blob.fire = blob.shoot;
+                    blob.shoot = rad => {
+                        var bullet = blob.fire(rad);
+                        if(bullet) bullet.m = 0.01;
+                    } 
+                    enemies.push(blob);
+                    sounds.BotSummon.play();
+                }
+                if(this.ticks == (expert? 50: 75)) {
+                    this.phase = 3;
+                    this.ticks = 0;
+                    for(let rad = 0; rad < PI2; rad += p) {
+                        var blob = new MafiaGunner();
+                        Bullet.position(blob, rad + PI/8, this);
+                        blob.r = 0;
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        blob.color3 = this.color;
+                        blob.coll = 0;
+                        blob.mo = PI/8;
+                        blob.vx = cos(rad) * .5;
+                        blob.vy = sin(rad) * .5;
+                        enemies.push(blob);
+                    }
+                    sounds.BotSummon.play();
+                }
+            break;
+            case 3:
+                ++this.ticks;
+                if(this.ticks < 40) {
+                    this.r = Entity.radian(player, this) - p;
+                }
+                if(this.ticks == 50) {
+                    this.phase = 4;
+                    this.ticks = 0;
+                    this.spd = expert? 0.3: 0.15;
+                    this.m = 0.1;
+                    sounds.Dash.play();
+                }
+            break;
+            case 4:
+                ++this.ticks;
+                if(this.ticks % 20 == 0) {
+                    sounds.Dash.play();
+                }
+                if(this.ticks % 20 < 10) {
+                    this.move(this.r + p);
+                }else{
+                    this.r = Entity.radian(player, this) - p;
+                }
+                if(this.hitWall) {
+                    this.r = atan(this.vy, this.vx) - p;
+                }
+                if(this.ticks == 80) {
+                    this.phase = 5;
+                    this.ticks = 0;
+                    this.m = 1;
+                }
+            break;
+            case 5:
+                ++this.ticks;
+                // if(this.ticks % 4 == 0 && this.ticks <= 32) {
+                //     var a = this.ticks * .125;
+                //     var blob = new Bomb();
+                //     var rad = a * p;
+                //     Bullet.position(blob, rad + PI/8, this);
+                //     blob.color = this.color;
+                //     blob.coll = 0;
+                //     blob.mo = PI/8;
+                //     blob.vx = cos(rad) * .5;
+                //     blob.vy = sin(rad) * .5;
+                //     enemies.push(blob);
+                // }
+                if(this.ticks == 60) {
+                    this.phase = 0;
+                    this.ticks = 0;
+                    for(let rad = 0; rad < PI2; rad += p) {
+                        var blob = new Pounder();
+                        Bullet.position(blob, rad + PI/8, this);
+                        blob.r = 0;
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        blob.color3 = this.color;
+                        blob.coll = 0;
+                        blob.mo = PI/8;
+                        blob.vx = cos(rad) * .5;
+                        blob.vy = sin(rad) * .5;
+                        enemies.push(blob);
+                    }
+                    sounds.BotSummon.play();
+                }
+            break;
+        }
+    }
+}
+class Summoner extends Brain{
+    team = TEAM.BOSS + TEAM.BAD;
+    hits = TEAM.GOOD;
+    coll = 0;
+    xHp = 20;
+    hp = 20;
+    s = 2;
+    r = 0;
+    xp = 30;
+    ro = 0;
+    goal = new Point;
+    draw() {
+        if(this.color2 == "#f00") {
+            var {goal} = this;
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#f00";
+            ctx.moveTo((this.x + this.s * .5) * scale, (this.y + this.s * .5) * scale);
+            ctx.lineTo(goal.x * scale, goal.y * scale);
+            ctx.stroke();
+        }
+        super.draw();
+    }
+    constructor() {
+        super();
+        if(expert) this.spd *= 1.5;
+    }
+    attacked(obj) {
+        super.attacked(obj);
+        if(this.god) return;
+        
+        var a = 7 * obj.atk;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            Xp.position(blob, i * PI2/a + o, this);
+            exp.push(blob);
+        }
+    }
+    smartMove() {
+        this.rad += (srand() - .5)/4;
+        this.brainPoints.push([this.rad, this.wander]);
+        var lx = this.x + this.s;
+        var ly = this.y + this.s;
+
+        var d = 10;
+        var p = 2;
+
+        if(this.x < d) {
+            var n = (this.x - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI, -n]);
+        }
+        if(lx > game.w - d) {
+            var dis = game.w - lx;
+            var n = (dis - d)/-d;
+            n **= p;
+            this.brainPoints.push([0, -n]);
+        }
+        if(this.y < d) {
+            var n = (this.y - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI * 3/2, -n]);
+        }
+        if(ly > game.h - d) {
+            var dis = game.h - ly;
+            var n = (dis - d)/-d;
+            n **= p;
+            this.brainPoints.push([PI/2, -n]);
+        }
+        this.brainMove();
+    }
+    toGoal(mult) {
+        var {goal} = this;
+        if(Entity.distance(this, goal) > 1) {
+            this.moveTo(goal, mult);
+        }else return 1;
+    }
+    register(enemy) {
+        this.registerPlayer(enemy);
+        if(!(enemy.team & TEAM.GOOD)) return;
+        var dis = Entity.distance(this, enemy);
+        var d = 10;
+        if(dis < d) {
+            var n = (dis - d)/-d;
+            var rad = Entity.radian(this, enemy);
+            n **= .5;
+            // if(expert) this.brainPoints.push([rad, n * 2]); 
+            // else this.brainPoints.push([rad + PI, -n]);
+            this.brainPoints.push([rad + PI, -n]);
+        }
+    }
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = this.getMain();
+        // var {goal} = this;
+        // if(this.color2 == "#f00") {
+        //     this.god = true;
+        // }else{
+        //     this.god = false;
+        // }
+        switch(this.phase) {
+            case 0:
+                if(this.time < 100 && this.time % 10 == 0) {
+                    var rad = random(PI2);
+                    var blob = new Mover();
+                    Bullet.position(blob, rad - PI/8, this);
+                    blob.color = this.color;
+                    blob.color2 = this.color2;
+                    blob.coll = 0;
+                    enemies.push(blob);
+                    sounds.Summon.play();
+                }
+                if(this.time >= (expert? 150: 250)) {
+                    this.color2 = "#f70";
+                }
+                if(this.time <= (expert? 175: 250)) {
+                    this.smartMove();
+                }
+                if(this.time == (expert? 200: 300)) {
+                    this.time = 0;
+                    this.phase = 1;
+                }
+                ++this.time;
+            break;
+            case 1:
+                if(this.time < 100 && this.time % 10 == 0) {
+                    var rad = Entity.radian(player, this);
+                    var blob = new Mover();
+                    Bullet.position(blob, rad, this);
+                    blob.color = this.color;
+                    blob.color2 = this.color2;
+                    blob.coll = 0;
+                    blob.tick();
+                    blob.vx *= 20;
+                    blob.vy *= 20;
+                    enemies.push(blob);
+                    sounds.Summon.play();
+                }
+                if(this.time == 100) {
+                    this.color2 = "#f0f";
+                    this.time = 0;
+                    this.phase = 2;
+                }
+                ++this.time;
+            break;
+            case 2:
+                var dis = Entity.distance(this, player);
+                if(dis > 7) {
+                    this.moveTo(player);
+                    this.m = 20;
+                }else{
+                    this.m = 5;
+                    let e = PI * .25;
+                    let summon = expert? Chill: Mover;
+                    for(let i = 0; i < 8; i++) {
+                        var rad = i * e;
+                        var blob = new summon();
+                        Bullet.position(blob, rad, this);
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        blob.force = true;
+                        if(expert) blob.spd *= 1.5;
+                        blob.coll = 0;
+                        enemies.push(blob);
+                    }
+                    sounds.Summon.play();
+                    this.phase = 3;
+                }
+            break;
+            case 3:
+                this.smartMove();
+                if(this.time == 150) {
+                    let h = (innerHeight/scale)/(11);
+                    let w = innerWidth/scale - .5;
+                    let summon = Mover;
+                    for(let i = 0; i < 10; i++) {
+                        let a = i % 2 == 0;
+                        if(expert) {
+                            if(a) summon = Mover;
+                            else summon = Chill;
+                        }
+                        var blob = new summon();
+                        blob.coll = 0;
+                        blob.x = expert? .5: (a? .5: w);
+                        blob.y = h * i + .5;
+                        blob.r = expert? 0: (a? 0: PI);
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        if(summon == Chill) {
+                            // blob.force = true;
+                            blob.spd *= 1.5; 
+                        }
+                        enemies.push(blob);
+                        if(expert) {
+                            if(a) summon = Chill;
+                            else summon = Mover;
+                        }else continue;
+                        var blob = new summon();
+                        blob.coll = 0;
+                        blob.x = w;
+                        blob.y = h * i;
+                        blob.r = PI;
+                        blob.color = this.color;
+                        blob.color2 = this.color2;
+                        if(summon == Chill) {
+                            // blob.force = true;
+                            blob.spd *= 1.5; 
+                        }
+                        enemies.push(blob);
+                    }
+                    this.color2 = "#f0f";
+                    sounds.BigMagic.play();
+                }else if(this.time == 500) {
+                    this.time = 0;
+                    this.phase = 0;
+                }
+                if(this.time == 50) {
+                    this.color2 = "#666";
+                }
+                ++this.time;
+            break;
+        }
+    }
+    time = 0;
+    phase = 0;
+    color = "#ff0";
+    color2 = "#f0f";
+    shape2 = shapes.get("square.4");
+    shape = shapes.get("bullet");
+    static name = "Summoner";
+    static type = "Boss";
+}
+class Snake extends Brain{
+    static type = "Miniboss";
+    constructor(head) {
+        super();
+        this.head = head;
+        if(expert) this.spd *= 1.5;
+        this.nspd = this.spd;
+    }
+    coll = 0;
+    wander = 1;
+    xHp = 2;
+    hp = 2;
+    tick() {
+        var {head} = this;
+        this.spd = this.nspd;
+        if(head) {
+            var loc = {...head};
+            var dis = Entity.distance(this, loc);
+            // loc.x += this.vx * 2;
+            // loc.y += this.vy * 2;
+            loc.x += head.vx * -5;
+            loc.y += head.vy * -5;
+            if(dis > 1.5) this.moveTo(loc);
+            this.shape = this.tail?
+                shapes.get("square"):
+                shapes.get("snake-tail");
+            head.tail = true;
+            // this.charging = head.charging;
+            if(head.dead) {
+                this.rad = this.r;
+                delete this.head;
+            }
+        }else{
+            this.shape = this.tail?
+                shapes.get("snake-top"):
+                shapes.get("snake-head");
+            if(this.charging) {
+                --this.charging;
+                super.tick();
+            }else{
+                var {player} = this;
+                if(player && player.dead) delete this.player;
+                if(!player) player = this.getMain();
+
+                var dis = Entity.distance(player, this);
+
+                if(dis < expert? 10: 5) {
+                    this.charging = 50;
+                    this.spd *= 20;
+                    this.moveTo(player);
+                    this.spd = this.nspd;
+                }else super.tick();
+            }
+        }
+        this.tail = false;
         this.r = atan(this.vy, this.vx);
     }
-    color = "#f5a";
-    shape = shapes.get("spikebox");
+    register(what) {
+        this.registerPlayer(what);
+    }
+    draw() {
+        super.draw();
+        if(this.head && !this.dead) {
+            var {head, s} = this;
+            s *= .5;
+            var n = dist(s, s);
+            n -= 1/scale;
+
+            var a = PI * .25;
+            var b = -a;
+            var c = a * 3;
+            var d = a + PI;
+
+            var hx = head.x + s;
+            var hy = head.y + s;
+            var hr = head.r;
+
+            var x1 = hx + cos(hr + c) * n;
+            var y1 = hy + sin(hr + c) * n;
+
+            var x2 = hx + cos(hr + d) * n;
+            var y2 = hy + sin(hr + d) * n;
+
+            var x5 = hx + cos(hr + a) * n;
+            var y5 = hy + sin(hr + a) * n;
+
+            var x6 = hx + cos(hr + b) * n;
+            var y6 = hy + sin(hr + b) * n;
+
+            var tx = this.x + s;
+            var ty = this.y + s;
+            var tr = this.r;
+
+            var x3 = tx + cos(tr + a) * n;
+            var y3 = ty + sin(tr + a) * n;
+
+            var x4 = tx + cos(tr + b) * n;
+            var y4 = ty + sin(tr + b) * n;
+
+            x1 *= scale;
+            y1 *= scale;
+            x2 *= scale;
+            y2 *= scale;
+            x3 *= scale;
+            y3 *= scale;
+            x4 *= scale;
+            y4 *= scale;
+
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x3, y3);
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x4, y4);
+            ctx.closePath();
+            ctx.stroke();
+        }
+    }
+}
+class SnakeHealth extends Snake{
+    xHp = 40;
+    hp = 40;
+    s = 0;
+    coll = 0;
+    team = 0;
+    hits = 0;
+    color2 = "#999";
+    ro = PI;
+    tick() {
+        this.shape = shapes.get("snake-head");
+        this.hp = 0;
+        for(let {hp} of this.parts) {
+            if(hp > 0) this.hp += hp;
+        }
+    }
+    // movement() {}
+    constructor(...parts) {
+        super();
+        this.parts = parts;
+    }
 }
 var deadzone = 0.1;
 var dead = (num, dual) => {
@@ -2610,7 +2878,7 @@ class TheDasher extends Player{
             what.color2 = this.color2;
             what.color3 = this.color3;
         }else if(what.hp <= 0 && this.god) {
-            what.team = this.team;
+            what.team = this.team + TEAM.BAD;
             what.hits = this.hits;
             what.coll = this.coll;
             what.color = this.color;
@@ -3621,8 +3889,8 @@ try{
 var failedSave;
 if(failedSave && Enviroment == env.SOLOLEARN) {
     saveData = {
-        levelE: 20,
-        level: 20
+        levelE: 25,
+        level: 25
     };
 }
 saveData.save = function() {try{
@@ -3852,7 +4120,7 @@ onload = () => {
         }
         if(keys.use("Escape") && (keys.has("ControlLeft"))) {
             keys.clear();
-            if(confirm("Are you sure you want to reset?")) {
+            if(alert("Are you sure you want to reset?")) {
                 saveData.level = 0;
                 saveData.levelE = 0;
                 saveData.save();
@@ -3953,7 +4221,8 @@ var boss = {
     5: Dasher,
     10: Summoner,
     15: MafiaInvasion,
-    20: Squish
+    20: Squish,
+    25: Snake
 };
 var Survival;
 const ms = 1000/40;
@@ -4116,7 +4385,7 @@ function levelName(level) {
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
                 Survival = false;
-            }else if((allDead && (keys.use("Space") || A_button)) || buttonClick(restartButton) || Y_button) {
+            }else if((allDead && (keys.use("Space") || A_button || X_button)) || buttonClick(restartButton) || Y_button) {
                 restart();
             }
 
@@ -4316,7 +4585,6 @@ function nextLevel() {
         break;
         case 15:
             var blob = new MafiaInvasion;
-            blob.spawn();
             bosses.add(blob);
             enemies.push(blob);
         break;
@@ -4386,6 +4654,39 @@ function nextLevel() {
                 blob.spawn();
                 enemies.push(blob);
             }
+        break;
+        case 23:
+            for(let i = 0; i < 10; i++) {
+                var blob = new Slime();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 24:
+            for(let i = 0; i < 5; i++) {
+                var blob = new Runner();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new Spinner();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 25:
+            var head = new Snake;
+            var parts = [head];
+            head.spawn();
+            enemies.push(head);
+            for(let i = 1; i < 20; i++) {
+                var blob = new Snake(head);
+                parts.push(blob);
+                blob.spawn();
+                enemies.push(blob);
+                head = blob;
+            }
+            var healthbar = new SnakeHealth(...parts);
+            bosses.add(healthbar);
+            enemies.push(healthbar);
         break;
         default:
             --level;
