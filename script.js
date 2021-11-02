@@ -1,6 +1,17 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
+//BILL
+
+const env = {
+    SOLOLEARN: Symbol()
+};
+const Enviroment = undefined;
+
+//https://www.beepbox.co/2_3/#6n31s6kbl00e0Btbm0a7g0Bjbi0r1o3210T0w0f2d1c0h0v2T0w3f1d1c0h0v0T0w1f1d1c0h0v0T2w1d1v2b0000d3g0018i4x8310c44x80000i4N8klBsi4N8oCFyqCN8j4xMh4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4gp23WFzO6wd0q0Ogq0Q1E3wMQ1E30xF3g6wdoqgQ1E3g6wdoq0Q1E3G3g6wdoqgQ1E3m40FBO2w2oYic4CLQhXga0r4x8Xh7I0E1Ill9EZ9DTjnUA50e8FHUHyX86CNZFF-S-q3g6Ed0qgQ1F3g7i6wd8q0QxE3q6wfGgl0OWqKHWSCGC70a26of91ggP1YA513a7B0G1i2E6kfPoa0k0VPCu9FGYhPCjAVejPDdcPWpuHL00Fy0k3J8QQ3F8w0
+
+//https://www.beepbox.co/2_3/#6n31s6kbl02e07t9m0a7g0fj7i0r1o3210T0w0f1d1c0h0v0T0w3f1d1c3h6v0T0w1f1d1c0h0v0T2w1d1v3b4h4h4h4h4h404xci514h4h4h4h4h4h4h4h4h4h4h4h4p21QFxM2A4a2M5FaM4623120wOg2Ce2C78IC27iCvle0zSgsza5ARzFSWsAuO3ApoICItek2I5wagp97B0A0i8945N2M5Mawl0I1ui00Fyhg6y18QxE3ih00
+
 {
     let canvas = document.createElement("canvas"),
         ctx = canvas.getContext("2d");
@@ -88,6 +99,17 @@ var canvas = document.createElement("canvas"),
                     ctx.fill();
                 }
             }
+
+            if(Survival) {
+                var time = update.timeLeft;
+                if(time < 500) {
+                    var a = (500 - time) * .002;
+                    a **= 3;
+                    a *= .2;
+                    ctx.fillStyle = `rgba(255, 85, 0, ${a})`;
+                    ctx.fillRect(0, 0, wid, hei);
+                }
+            }
             // ctx.restore();
         },
         draw() {
@@ -113,17 +135,6 @@ var canvas = document.createElement("canvas"),
         }
     };
 }
-//ROF
-
-const env = {
-    SOLOLEARN: Symbol()
-};
-const Enviroment = undefined;
-
-//https://www.beepbox.co/2_3/#6n31s6kbl00e0Btbm0a7g0Bjbi0r1o3210T0w0f2d1c0h0v2T0w3f1d1c0h0v0T0w1f1d1c0h0v0T2w1d1v2b0000d3g0018i4x8310c44x80000i4N8klBsi4N8oCFyqCN8j4xMh4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4gp23WFzO6wd0q0Ogq0Q1E3wMQ1E30xF3g6wdoqgQ1E3g6wdoq0Q1E3G3g6wdoqgQ1E3m40FBO2w2oYic4CLQhXga0r4x8Xh7I0E1Ill9EZ9DTjnUA50e8FHUHyX86CNZFF-S-q3g6Ed0qgQ1F3g7i6wd8q0QxE3q6wfGgl0OWqKHWSCGC70a26of91ggP1YA513a7B0G1i2E6kfPoa0k0VPCu9FGYhPCjAVejPDdcPWpuHL00Fy0k3J8QQ3F8w0
-
-//https://www.beepbox.co/2_3/#6n31s6kbl02e07t9m0a7g0fj7i0r1o3210T0w0f1d1c0h0v0T0w3f1d1c3h6v0T0w1f1d1c0h0v0T2w1d1v3b4h4h4h4h4h404xci514h4h4h4h4h4h4h4h4h4h4h4h4p21QFxM2A4a2M5FaM4623120wOg2Ce2C78IC27iCvle0zSgsza5ARzFSWsAuO3ApoICItek2I5wagp97B0A0i8945N2M5Mawl0I1ui00Fyhg6y18QxE3ih00
-
 {
     class Pointer{
         /**@param {Touch} touch*/
@@ -4434,7 +4445,6 @@ function levelName(level) {
     var update = async function() {
         while(true) {
             await frame();
-            ++TIME;
             try{
             if(mainMenu.active) {
                 mainMenu();
@@ -4445,7 +4455,7 @@ function levelName(level) {
             // ctx.fillRect(0, 0, game.width, game.height);
             ctx.drawImage(background.canvas, 0, 0);
             ctx.drawImage(background.overlay, 0, 0);
-            if(TIME % 10 == 0) {
+            if(TIME++ % 10 == 0) {
                 background.shadow();
             }
             var i = 0;
@@ -4534,12 +4544,23 @@ function levelName(level) {
                 var boss = level % 5 == 0;
                 var alltime = (boss? 1000: 500);
                 var timeLeft = alltime - TIME;
+
                 if(timeLeft < 0) timeLeft = 0;
                 txt = `Time: ${timeLeft}`;
+
+                update.timeLeft = timeLeft;
 
                 if(timeLeft > 100) ctx.fillStyle = "#33c";
                 else ctx.fillStyle = "#c33";
                 ctx.fillText(txt, 0, scale * 2);
+
+                if(level == 0) {
+                    main.nextLevel();
+                    if(mains[1]) {
+                        mains[1].nextLevel();
+                    }
+                    timeLeft = 0;
+                }
             }
 
             let a = [];
