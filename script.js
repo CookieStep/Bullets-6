@@ -1,7 +1,119 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//DBB
+{
+    let canvas = document.createElement("canvas"),
+        ctx = canvas.getContext("2d");
+    let overlay = document.createElement("canvas"),
+        shw = overlay.getContext("2d");
+    // let resetShadow = () => {
+    //     overlay = document.createElement("canvas"),
+    //         shw = canvas.getContext("2d");
+    //     background.overlay = overlay
+    // };
+    var background = {
+        canvas, ctx,
+        overlay, shw,
+        recolor() {
+            var colors = new Set;
+            for(let blob of enemies) {
+                if(blob instanceof Spawner) {
+                    let obj = blob.boss;
+                    if(obj.color) colors.add(obj.color);
+                    if(obj.color2) colors.add(obj.color2);
+                    if(obj.color3) colors.add(obj.color3);
+                }else{
+                    if(blob.color) colors.add(blob.color);
+                    if(blob.color2) colors.add(blob.color2);
+                    if(blob.color3) colors.add(blob.color3);
+                }
+            }
+            this.colors = [...colors];
+        },
+        shadow() {
+            var s = scale * 1.5;
+            var width = floor(innerWidth/s);
+            var height = floor(innerHeight/s);
+            var xo = (innerWidth - width * s) * .5;
+            var yo = (innerHeight - height * s) * .5;
+
+            xo = floor(xo);
+            yo = floor(yo);
+            // var {colors} = this;
+            var wid = game.width;
+            var hei = game.height;
+            var ctx = shw;
+            ctx.globalCompositeOperation = "copy";
+            ctx.fillStyle = "#000b";
+            ctx.fillRect(0, 0, wid, hei);
+            // ctx.save();
+
+            // ctx.globalCompositeOperation = "xor";
+            // ctx.fillStyle = "0001";
+
+            // ctx.shadowBlur = 5;
+            // ctx.shadowColor = "ffff";
+
+            ctx.globalCompositeOperation = "source-over";
+
+            var point = new Point;
+            var rs = 1/scale;
+            point.s = s * rs;
+            function close() {
+                for(let blob of enemies) {
+                    if(Entity.distance(point, blob) < 2) {
+                        return blob;
+                    }
+                }
+            }
+            function colorArray(blob) {
+                var colors = [];
+                if(blob instanceof Spawner) blob = blob.boss;
+                if(blob.color) colors.push(blob.color);
+                if(blob.color2) colors.push(blob.color2);
+                if(blob.color3) colors.push(blob.color3);
+                return colors;
+            }
+            for(let x = -1; x <= width; x++) {
+                point.x = (x * s + xo) * rs;
+                for(let y = -1; y <= height; y++) {
+                    point.y = (y * s + yo) * rs;
+                    var blob = close();
+                    if(!blob) continue;
+                    ctx.beginPath();
+                    ctx.fillStyle = randomOf(colorArray(blob));
+                    ctx.rect(x * s + xo + 1, y * s + yo + 1, s - 2, s - 2);
+                    ctx.fill();
+                    ctx.fillStyle = "#0008";
+                    ctx.fill();
+                }
+            }
+            // ctx.restore();
+        },
+        draw() {
+            var s = scale * 1.5;
+            var width = floor(innerWidth/s);
+            var height = floor(innerHeight/s);
+            var xo = (innerWidth - width * s) * .5;
+            var yo = (innerHeight - height * s) * .5;
+            var {colors} = this;
+
+            ctx.strokeStyle = expert? "#f0f": "#fff";
+            ctx.lineWidth = 2;
+            for(let x = -1; x <= width; x++) {
+                for(let y = -1; y <= height; y++) {
+                    ctx.beginPath();
+                    ctx.rect(x * s + xo, y * s + yo, s, s);
+                    ctx.fillStyle = randomOf(colors);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            }
+            this.shadow();
+        }
+    };
+}
+//ROF
 
 const env = {
     SOLOLEARN: Symbol()
@@ -221,7 +333,7 @@ var TEAM = {
 };
 var DEAD = 10;
 {
-    class Path extends Path2D{
+    var Path = class Path extends Path2D{
         /**@param {(path: Path2D) => void} path*/
         constructor(path) {
             if(typeof path == "function") {
@@ -232,6 +344,7 @@ var DEAD = 10;
     }
 
     var shapes = new Map;
+    shapes.set("circle", new Path(ctx => ctx.arc(.5, .5, .5, 0, PI2)));
     shapes.set("square", new Path(ctx => ctx.rect(0, 0, 1, 1)))
     shapes.set("square.4", new Path(ctx => {
         var r = .4;
@@ -1603,7 +1716,9 @@ class MafiaInvasion extends Mafia{
         }
 
     }
-    movement() {}
+    movement() {
+        this.tick();
+    }
     tick() {
         var n = this.hp;
         if(n > 10) n = 10;
@@ -1721,9 +1836,9 @@ class MafiaCharger extends Mafia{
 class Spinner extends Chill{
     tick() {
         super.tick();
-        this.rot += PI/64;
+        this.rot += PI/32;
         this.r = this.rot;
-        if(++this.time % 4 == 0) {
+        if(++this.time % 6 == 0) {
             for(let i = 0; i < 2; i++) {
                 var blob = new Bullet(this, this.r + i * PI);
                 blob.m = 0.01;
@@ -1833,8 +1948,8 @@ class Runner extends Mover{
         super();
         this.spd *= 1.5;
     }
-    color = "#7ff";
-    color2 = "#cff";
+    color = "#055";
+    color2 = "#7f7";
     shape2 = shapes.get("dual-arrow");
 }
 class Dasher extends Mover{
@@ -2345,6 +2460,7 @@ class Summoner extends Brain{
             break;
             case 2:
                 var dis = Entity.distance(this, player);
+                this.color2 = "#afa";
                 if(dis > 7) {
                     this.moveTo(player);
                     this.m = 20;
@@ -2365,6 +2481,7 @@ class Summoner extends Brain{
                     }
                     sounds.Summon.play();
                     this.phase = 3;
+                    this.color2 = "#f0f";
                 }
             break;
             case 3:
@@ -2431,7 +2548,6 @@ class Summoner extends Brain{
     static type = "Boss";
 }
 class Snake extends Brain{
-    static type = "Miniboss";
     constructor(head) {
         super();
         this.head = head;
@@ -2442,6 +2558,8 @@ class Snake extends Brain{
     wander = 1;
     xHp = 2;
     hp = 2;
+    m = 0.1;
+    static type = "Miniboss";
     tick() {
         var {head} = this;
         this.spd = this.nspd;
@@ -2457,15 +2575,21 @@ class Snake extends Brain{
                 shapes.get("square"):
                 shapes.get("snake-tail");
             head.tail = true;
-            // this.charging = head.charging;
+            this.charging = head.charging;
             if(head.dead) {
                 this.rad = this.r;
                 delete this.head;
             }
-        }else{
+        }else{ //If head
             this.shape = this.tail?
                 shapes.get("snake-top"):
                 shapes.get("snake-head");
+            if(this.xHp > 1) {
+                this.xHp = 1;
+            }
+            if(this.hp > 1) {
+                this.hp = 1;
+            }
             if(this.charging) {
                 --this.charging;
                 super.tick();
@@ -2476,9 +2600,9 @@ class Snake extends Brain{
 
                 var dis = Entity.distance(player, this);
 
-                if(dis < expert? 10: 5) {
+                if(dis < (expert? 10: 5)) {
                     this.charging = 50;
-                    this.spd *= 20;
+                    this.spd *= 10;
                     this.moveTo(player);
                     this.spd = this.nspd;
                 }else super.tick();
@@ -2551,8 +2675,8 @@ class Snake extends Brain{
     }
 }
 class SnakeHealth extends Snake{
-    xHp = 40;
-    hp = 40;
+    xHp = 39;
+    hp = 39;
     s = 0;
     coll = 0;
     team = 0;
@@ -2571,6 +2695,40 @@ class SnakeHealth extends Snake{
         super();
         this.parts = parts;
     }
+}
+class Gobble extends Enemy{
+    constructor() {
+        super();
+        if(expert) this.spd *= 1.5;
+    }
+    spd = .05;
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = this.getMain();
+        this.moveTo(player);
+        this.r = atan(this.vy, this.vx);
+        this.makeHead();
+        ++this.time;
+        if(expert) ++this.time;
+        this.time %= 25;
+    }
+    makeHead() {
+        var d = 25 * .5;
+        var c = abs(this.time - d) * 0.02 - .25;
+        // var c = 0;
+        this.shape = new Path(ctx => {
+            var a = PI * (0.25 + c);
+            var b = PI * (1.75 - c);
+            ctx.arc(.5, .5, .5, a, b);
+            ctx.lineTo(.7, .5);
+            ctx.closePath();
+        });
+    }
+    time = 0;
+    shape2 = shapes.get("circle");
+    color = "#0a0";
+    color2 = "#f0f";
 }
 var deadzone = 0.1;
 var dead = (num, dual) => {
@@ -2901,6 +3059,7 @@ class TheDasher extends Player{
                 var u = PI2/8;
                 for(let i = 0; i < PI2; i += u) {
                     var blob = new Bullet(what, i);
+                    blob.team = TEAM.GOOD;
                     blob.hits = TEAM.BAD;
                     blob.coll = 0;
                     blob.time = 10;
@@ -3034,7 +3193,12 @@ class Minion extends Brain{
         }
     }
 }
+var minionSelected = 0;
 class SummonerClass extends Player{
+    constructor() {
+        super();
+        this.selected = minionSelected;
+    }
     onXp() {
         var pets = floor(this.p/5);
         if(pets < (this.maxSum - this.alive.length)) {
@@ -3113,6 +3277,7 @@ class SummonerClass extends Player{
     ability(key) {
         if(key == 1) {
             this.selected = (this.selected + 1) % this.summons.length;
+            minionSelected = this.selected;
             var arr = [], len = this.pets.length;
             for(let i = 0; i < len; i++) {
                 var pet = this.summon();
@@ -4182,6 +4347,8 @@ function restart() {
     if(Survival) {
         level = 0;
     }
+    background.recolor();
+    background.draw();
 }
 onresize = () => {
     game.width = innerWidth;
@@ -4194,6 +4361,15 @@ onresize = () => {
 
     canvas.width = game.width;
     canvas.height = game.height;
+
+    background.canvas.width = game.width;
+    background.canvas.height = game.height;
+    background.overlay.width = game.width;
+    background.overlay.height = game.height;
+
+    if(background.colors) {
+        background.draw();
+    }
 };
 var keys = new (class Keys extends Map {
     use(code) {
@@ -4264,9 +4440,14 @@ function levelName(level) {
                 mainMenu();
                 continue;
             }
-            ctx.fillStyle = "#000";
-            // ctx.shadowBlur = 0;
-            ctx.fillRect(0, 0, game.width, game.height);
+            // ctx.fillStyle = "#000";
+            // // ctx.shadowBlur = 0;
+            // ctx.fillRect(0, 0, game.width, game.height);
+            ctx.drawImage(background.canvas, 0, 0);
+            ctx.drawImage(background.overlay, 0, 0);
+            if(TIME % 10 == 0) {
+                background.shadow();
+            }
             var i = 0;
             bosses.forEach(blob => {
                 var l = 5;
@@ -4458,6 +4639,7 @@ function nextLevel() {
     if(level > saveData.level || !saveData.level) {
         saveData.level = level;
     }
+    let olevel = level;
     saveData.save();
     switch(++level) {
         case 1:
@@ -4663,8 +4845,8 @@ function nextLevel() {
             }
         break;
         case 24:
-            for(let i = 0; i < 5; i++) {
-                var blob = new Runner();
+            for(let i = 0; i < 7; i++) {
+                var blob = new MiniDash();
                 blob.spawn();
                 enemies.push(blob);
                 var blob = new Spinner();
@@ -4688,9 +4870,53 @@ function nextLevel() {
             bosses.add(healthbar);
             enemies.push(healthbar);
         break;
+        case 26:
+            for(let i = 0; i < 10; i++) {
+                var blob = new Runner();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 27:
+            for(let i = 0; i < 8; i++) {
+                var blob = new Walker();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new Runner();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 28:
+            for(let i = 0; i < 10; i++) {
+                var blob = new Gobble();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
+        case 28:
+            for(let i = 0; i < 5; i++) {
+                var blob = new Gobble();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new Runner();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new MiniDash();
+                blob.spawn();
+                enemies.push(blob);
+                var blob = new Spinner();
+                blob.spawn();
+                enemies.push(blob);
+            }
+        break;
         default:
             --level;
         break;
+    }
+    if(level != olevel) {
+        background.recolor();
+        background.draw();
     }
 }
 {
