@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//BILL
+//PAD
 
 const env = {
     SOLOLEARN: Symbol()
@@ -11,6 +11,8 @@ const Enviroment = undefined;
 //https://www.beepbox.co/2_3/#6n31s6kbl00e0Btbm0a7g0Bjbi0r1o3210T0w0f2d1c0h0v2T0w3f1d1c0h0v0T0w1f1d1c0h0v0T2w1d1v2b0000d3g0018i4x8310c44x80000i4N8klBsi4N8oCFyqCN8j4xMh4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4gp23WFzO6wd0q0Ogq0Q1E3wMQ1E30xF3g6wdoqgQ1E3g6wdoq0Q1E3G3g6wdoqgQ1E3m40FBO2w2oYic4CLQhXga0r4x8Xh7I0E1Ill9EZ9DTjnUA50e8FHUHyX86CNZFF-S-q3g6Ed0qgQ1F3g7i6wd8q0QxE3q6wfGgl0OWqKHWSCGC70a26of91ggP1YA513a7B0G1i2E6kfPoa0k0VPCu9FGYhPCjAVejPDdcPWpuHL00Fy0k3J8QQ3F8w0
 
 //https://www.beepbox.co/2_3/#6n31s6kbl02e07t9m0a7g0fj7i0r1o3210T0w0f1d1c0h0v0T0w3f1d1c3h6v0T0w1f1d1c0h0v0T2w1d1v3b4h4h4h4h4h404xci514h4h4h4h4h4h4h4h4h4h4h4h4p21QFxM2A4a2M5FaM4623120wOg2Ce2C78IC27iCvle0zSgsza5ARzFSWsAuO3ApoICItek2I5wagp97B0A0i8945N2M5Mawl0I1ui00Fyhg6y18QxE3ih00
+
+//https://jummbus.bitbucket.io/#j4N07Unnamedn311s1k0l02e0bt38m0a7g0dj07i0r1O_U0000000000o22100T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou05q1d100f8y1z6C1c0h0H-JJAArrqiih999T5v0kL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00T8v0pL0OaD0Oud9q1d100f6y1z2C0b028P8zcycN8h4w004h80000h8x4y8y8y8y8y8y8y4g008x4p24bFyUzj8Y2CbEAt60OhBVozF4tcn9CnjasJG6EQyeAhQJNIZDj8X17iVcmwbAW97i8Wmi5E2ViAhR2eE2CbAxq5q25EkGoJ2B0yQak4bgelR1q5mGbgFl1q5aGbgFlhq0I1hFQWd6FlEQqd42CnUhczOmhjcL87jQO_hj8ZbarcWs2Chyp7g8W96Ca92Q1sAhQ2eBkEM792Q1q0J0mwbg5Eka52Abg5E2Q1q0J0mxgEk001500n_E57EUkG0E6nEUpw0E7DEUuw00
 
 {
     let canvas = document.createElement("canvas"),
@@ -54,18 +56,14 @@ const Enviroment = undefined;
             var wid = game.width;
             var hei = game.height;
             var ctx = shw;
-            ctx.globalCompositeOperation = "copy";
+            ctx.globalCompositeOperation = "copy"; //Clear canvas
             ctx.fillStyle = "#000b";
             ctx.fillRect(0, 0, wid, hei);
             // ctx.save();
 
-            // ctx.globalCompositeOperation = "xor";
-            // ctx.fillStyle = "0001";
-
-            // ctx.shadowBlur = 5;
-            // ctx.shadowColor = "ffff";
-
-            ctx.globalCompositeOperation = "source-over";
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.fillStyle = "#0003";
+            ctx.shadowColor = "#000f";
 
             var point = new Point;
             var rs = 1/scale;
@@ -92,20 +90,23 @@ const Enviroment = undefined;
                     var blob = close();
                     if(!blob) continue;
                     ctx.beginPath();
-                    ctx.fillStyle = randomOf(colorArray(blob));
-                    ctx.rect(x * s + xo + 1, y * s + yo + 1, s - 2, s - 2);
+                    // ctx.fillStyle = randomOf(colorArray(blob));
+                    ctx.shadowBlur = 20;
+                    ctx.rect(x * s + xo, y * s + yo, s, s);
                     ctx.fill();
-                    ctx.fillStyle = "#0008";
-                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    // ctx.fillStyle = "#0008";
+                    // ctx.fill();
                 }
             }
 
+            ctx.globalCompositeOperation = "source-over";
             if(Survival) {
                 var time = update.timeLeft;
                 if(time < 500) {
                     var a = (500 - time) * .002;
-                    a **= 3;
-                    a *= .2;
+                    a **= 2;
+                    a *= .3;
                     ctx.fillStyle = `rgba(255, 85, 0, ${a})`;
                     ctx.fillRect(0, 0, wid, hei);
                 }
@@ -4455,36 +4456,9 @@ function levelName(level) {
             // ctx.fillRect(0, 0, game.width, game.height);
             ctx.drawImage(background.canvas, 0, 0);
             ctx.drawImage(background.overlay, 0, 0);
-            if(TIME++ % 10 == 0) {
+            if(TIME++ % 3 == 0) {
                 background.shadow();
             }
-            var i = 0;
-            bosses.forEach(blob => {
-                var l = 5;
-                var w = game.width * 5/8;
-                var x = (game.width - w)/2;
-                var h = scale;
-                var y = game.height - (i * 1.5 + 1) * h - l/2;
-                ctx.strokeStyle = blob.color;
-                ctx.fillStyle = blob.color2 || blob.color;
-                ctx.lineWidth = l;
-                var hp = blob.hp;
-                if(hp < 0) hp = 0;
-                ctx.fillRect(x, y, w * (hp/blob.xHp), h);
-                if(blob.hp2) {
-                    var hp = blob.hp2;
-                    if(hp < 0) hp = 0;
-                    ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
-                    ctx.fillRect(x, y, w * (hp/blob.xHp), h);
-                }
-                ctx.strokeRect(x, y, w, h);
-                var s = 1 + 5/scale;
-                blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
-                if(!enemies.includes(blob)) {
-                    bosses.delete(blob);
-                }
-                ++i;
-            });
             var nxp = [];
             for(let xp of exp) {
                 xp.update();
@@ -4521,6 +4495,33 @@ function levelName(level) {
                     }
                 }
             }
+            var i = 0;
+            bosses.forEach(blob => {
+                var l = 5;
+                var w = game.width * 5/8;
+                var x = (game.width - w)/2;
+                var h = scale;
+                var y = game.height - (i * 1.5 + 1) * h - l/2;
+                ctx.strokeStyle = blob.color;
+                ctx.fillStyle = blob.color2 || blob.color;
+                ctx.lineWidth = l;
+                var hp = blob.hp;
+                if(hp < 0) hp = 0;
+                ctx.fillRect(x, y, w * (hp/blob.xHp), h);
+                if(blob.hp2) {
+                    var hp = blob.hp2;
+                    if(hp < 0) hp = 0;
+                    ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
+                    ctx.fillRect(x, y, w * (hp/blob.xHp), h);
+                }
+                ctx.strokeRect(x, y, w, h);
+                var s = 1 + 5/scale;
+                blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
+                if(!enemies.includes(blob)) {
+                    bosses.delete(blob);
+                }
+                ++i;
+            });
             var txt = levelName(level);
             ctx.font = `${scale}px Arial`;
             ctx.fillStyle = expert? "#f0d": "#fff";
