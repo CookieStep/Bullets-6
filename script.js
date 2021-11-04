@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//PAD
+//SNEK
 
 const env = {
     SOLOLEARN: Symbol()
@@ -12,36 +12,33 @@ const Enviroment = undefined;
 
 //https://www.beepbox.co/2_3/#6n31s6kbl02e07t9m0a7g0fj7i0r1o3210T0w0f1d1c0h0v0T0w3f1d1c3h6v0T0w1f1d1c0h0v0T2w1d1v3b4h4h4h4h4h404xci514h4h4h4h4h4h4h4h4h4h4h4h4p21QFxM2A4a2M5FaM4623120wOg2Ce2C78IC27iCvle0zSgsza5ARzFSWsAuO3ApoICItek2I5wagp97B0A0i8945N2M5Mawl0I1ui00Fyhg6y18QxE3ih00
 
-//https://jummbus.bitbucket.io/#j4N07Unnamedn311s1k0l02e0bt38m0a7g0dj07i0r1O_U0000000000o22100T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou05q1d100f8y1z6C1c0h0H-JJAArrqiih999T5v0kL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00T8v0pL0OaD0Oud9q1d100f6y1z2C0b028P8zcycN8h4w004h80000h8x4y8y8y8y8y8y8y4g008x4p24bFyUzj8Y2CbEAt60OhBVozF4tcn9CnjasJG6EQyeAhQJNIZDj8X17iVcmwbAW97i8Wmi5E2ViAhR2eE2CbAxq5q25EkGoJ2B0yQak4bgelR1q5mGbgFl1q5aGbgFlhq0I1hFQWd6FlEQqd42CnUhczOmhjcL87jQO_hj8ZbarcWs2Chyp7g8W96Ca92Q1sAhQ2eBkEM792Q1q0J0mwbg5Eka52Abg5E2Q1q0J0mxgEk001500n_E57EUkG0E6nEUpw0E7DEUuw00
+//Dasher - https://jummbus.bitbucket.io/#j4N07Unnamedn311s1k0l02e0bt38m0a7g0dj07i0r1O_U0000000000o22100T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou05q1d100f8y1z6C1c0h0H-JJAArrqiih999T5v0kL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00T8v0pL0OaD0Oud9q1d100f6y1z2C0b028P8zcycN8h4w004h80000h8x4y8y8y8y8y8y8y4g008x4p24bFyUzj8Y2CbEAt60OhBVozF4tcn9CnjasJG6EQyeAhQJNIZDj8X17iVcmwbAW97i8Wmi5E2ViAhR2eE2CbAxq5q25EkGoJ2B0yQak4bgelR1q5mGbgFl1q5aGbgFlhq0I1hFQWd6FlEQqd42CnUhczOmhjcL87jQO_hj8ZbarcWs2Chyp7g8W96Ca92Q1sAhQ2eBkEM792Q1q0J0mwbg5Eka52Abg5E2Q1q0J0mxgEk001500n_E57EUkG0E6nEUpw0E7DEUuw00
+
+//Stage 1 - https://www.beepbox.co/2_3/#6n32s6kbl00e0nt7m0afg0nj7i0r1o32000T0w4f2d1c0h0v0T0w1f1d1c0h0v0T0w5f1d1c0h0v1T2w0d1v2T2w0d1v3b00000000wz92cA9m4xci4QlD4xci4QlD000h4h4h000h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4hp27FF70BQNp311E2CrhzE3BrePN0LG8qMRxSP7g7bStDB5ZAd8q0XhzE3BrePjfELN8qgQ1Sz7g7aUDpFyg6Ed0kPaVEdgq0YkCdgqwQ1jeCGLb3k7RoqwQ1WHGwR1E3Rnd1G3g7GqGQNY3Uw9zWMdEq0ZqoW0VnzePj4wc66wapy9zE3B97jIV9vIxwwRxSP7g7bStDabZAdoqwXpzE3BXeOCvhvN8qgQ1SIEdgq0V5osLytLabZAdoq0Xmk6Ed0syIenIXumnX8qgQ1SQNq3k6wapJ9zk6Ed0kPFGHOMR1Zm6Ed0uGWEdgq0ZlPgqwQ1WCGJcv0-8aC030QQQQQQQQQQQQQQRMdddddddddddddddk1jjjjjjjjjjjjjj1TQQQQQQQQQQQQQQwaoD66wMM1xJceEzghE8Q4qyd16Ezgh0Fws2w50a0k0E1g2w50a0k0E1g2w50a0g0a0k0E1g2w50a0mwE1g2w50a0k0E00
 
 {
     let canvas = document.createElement("canvas"),
         ctx = canvas.getContext("2d");
     let overlay = document.createElement("canvas"),
         shw = overlay.getContext("2d");
-    // let resetShadow = () => {
-    //     overlay = document.createElement("canvas"),
-    //         shw = canvas.getContext("2d");
-    //     background.overlay = overlay
-    // };
     var background = {
         canvas, ctx,
         overlay, shw,
         recolor() {
-            var colors = new Set;
-            for(let blob of enemies) {
-                if(blob instanceof Spawner) {
-                    let obj = blob.boss;
-                    if(obj.color) colors.add(obj.color);
-                    if(obj.color2) colors.add(obj.color2);
-                    if(obj.color3) colors.add(obj.color3);
-                }else{
-                    if(blob.color) colors.add(blob.color);
-                    if(blob.color2) colors.add(blob.color2);
-                    if(blob.color3) colors.add(blob.color3);
-                }
-            }
-            this.colors = [...colors];
+            // var colors = new Set;
+            // for(let blob of enemies) {
+            //     if(blob instanceof Spawner) {
+            //         let obj = blob.boss;
+            //         if(obj.color) colors.add(obj.color);
+            //         if(obj.color2) colors.add(obj.color2);
+            //         if(obj.color3) colors.add(obj.color3);
+            //     }else{
+            //         if(blob.color) colors.add(blob.color);
+            //         if(blob.color2) colors.add(blob.color2);
+            //         if(blob.color3) colors.add(blob.color3);
+            //     }
+            // }
+            // this.colors = [...colors];
         },
         shadow() {
             var s = scale * 1.5;
@@ -61,28 +58,26 @@ const Enviroment = undefined;
             ctx.fillRect(0, 0, wid, hei);
             // ctx.save();
 
-            ctx.globalCompositeOperation = "destination-out";
-            ctx.fillStyle = "#0003";
-            ctx.shadowColor = "#000f";
-
             var point = new Point;
             var rs = 1/scale;
             point.s = s * rs;
+            let arr = enemies.filter(blob => !(blob.team & TEAM.BULLET) && !blob.dead);
             function close() {
-                for(let blob of enemies) {
-                    if(Entity.distance(point, blob) < 2) {
+                for(let blob of arr) {
+                    if(Entity.isTouching(point, blob)) {
                         return blob;
                     }
                 }
             }
-            function colorArray(blob) {
-                var colors = [];
-                if(blob instanceof Spawner) blob = blob.boss;
-                if(blob.color) colors.push(blob.color);
-                if(blob.color2) colors.push(blob.color2);
-                if(blob.color3) colors.push(blob.color3);
-                return colors;
-            }
+            // function colorArray(blob) {
+            //     var colors = [];
+            //     if(blob instanceof Spawner) blob = blob.boss;
+            //     if(blob.color) colors.push(blob.color);
+            //     if(blob.color2) colors.push(blob.color2);
+            //     if(blob.color3) colors.push(blob.color3);
+            //     return colors;
+            // }
+
             for(let x = -1; x <= width; x++) {
                 point.x = (x * s + xo) * rs;
                 for(let y = -1; y <= height; y++) {
@@ -91,16 +86,24 @@ const Enviroment = undefined;
                     if(!blob) continue;
                     ctx.beginPath();
                     // ctx.fillStyle = randomOf(colorArray(blob));
-                    ctx.shadowBlur = 20;
+                    //Lighten square
                     ctx.rect(x * s + xo, y * s + yo, s, s);
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
+                    // ctx.globalCompositeOperation = "source-over";
+                    // ctx.shadowBlur = 0;
                     // ctx.fillStyle = "#0008";
                     // ctx.fill();
+                    //Glow effect
+                    ctx.globalCompositeOperation = "xor";
+                    ctx.fillStyle = "#fff5";
+                    ctx.shadowColor = "#fff";
+                    ctx.shadowBlur = 15;
+                    ctx.fill();
                 }
             }
 
+
             ctx.globalCompositeOperation = "source-over";
+            ctx.shadowBlur = 0;
             if(Survival) {
                 var time = update.timeLeft;
                 if(time < 500) {
@@ -123,11 +126,38 @@ const Enviroment = undefined;
 
             ctx.strokeStyle = expert? "#f0f": "#fff";
             ctx.lineWidth = 2;
+
+            var point = new Point;
+            var rs = 1/scale;
+            point.s = s * rs;
+
+            function getClosest() {
+                var [closest] = enemies.sort((a, b) => Entity.distance(point, a) - Entity.distance(point, b));
+                return randomOf(colorArray(closest));
+            }
+            function colorArray(blob) {
+                var colors = [];
+                if(blob instanceof Spawner) blob = blob.boss;
+                if(blob.color) colors.push(blob.color);
+                if(blob.color2) colors.push(blob.color2);
+                if(blob.color3) colors.push(blob.color3);
+                return colors;
+            }
+            // function close() {
+            //     for(let blob of enemies) {
+            //         if(Entity.distance(point, blob) < 2) {
+            //             return blob;
+            //         }
+            //     }
+            // }
+
             for(let x = -1; x <= width; x++) {
+                point.x = (x * s + xo) * rs;
                 for(let y = -1; y <= height; y++) {
+                    point.y = (y * s + yo) * rs;
                     ctx.beginPath();
                     ctx.rect(x * s + xo, y * s + yo, s, s);
-                    ctx.fillStyle = randomOf(colors);
+                    ctx.fillStyle = getClosest();
                     ctx.fill();
                     ctx.stroke();
                 }
@@ -3028,7 +3058,7 @@ class TheDasher extends Player{
     color = "#f70";
     hue = 28;
     color2 = "#fff";
-    color3 = "#a72";
+    color3 = "#f70";
     constructor(id) {
         super(id);
         if(id == 1) this.color = "#ff0";
@@ -3210,6 +3240,7 @@ class SummonerClass extends Player{
     constructor() {
         super();
         this.selected = minionSelected;
+        this.selected %= this.summons.length;
     }
     onXp() {
         var pets = floor(this.p/5);
@@ -4043,6 +4074,99 @@ class TheMaster extends SummonerClass{
         this.p = 10;
     }
 }
+class TheSnek extends Player{
+    desc = [
+        "Well rounded shooter",
+        "Skill: Shoot",
+        "Ability: Dodge"
+    ];
+    cols = [
+        "#55f",
+        "#aaf",
+        "#aaf"
+    ];
+    constructor(id) {
+        super(id);
+    }
+    hit(obj) {
+        super.hit(obj);
+        if(obj.hp <= 0) {
+            ++this.food;
+        }else{
+            Entity.collide(this, obj)
+        }
+    }
+    god = true;
+    coll = 0;
+    tick() {
+        super.tick();
+        this.makeHead();
+        if(this.mrad) {
+            ++this.ani;
+            this.ani %= 25;
+        }
+    }
+    ani = 0;
+    makeHead() {
+        var d = 25 * .5;
+        var c = abs(this.ani - d) * 0.02 - .25;
+        // var c = 0;
+        this.shape = new Path(ctx => {
+            var a = PI * (0.25 + c);
+            var b = PI * (1.75 - c);
+            ctx.arc(.5, .5, .5, a, b);
+            ctx.lineTo(.7, .5);
+            ctx.closePath();
+            ctx.rect(0, 0, .5, 1);
+        });
+    }
+    body = [];
+    nextLevel() {
+        for(let part of this.body) {
+            part.dead = DEAD;
+        }
+        var body = new SnekBody(this);
+        this.body = [body];
+        enemies.push(body);
+    }
+}
+class SnekBody extends Enemy{
+    constructor(parent) {
+        super();
+        this.parent = parent;
+        Xp.position(this, random(PI2), parent);
+    }
+    tick() {
+        var head = this.getFollow();
+        var loc = {...head};
+        // loc.x += this.vx * 2;
+        // loc.y += this.vy * 2;
+        var c = cos(head.r);
+        var s = sin(head.r);
+        loc.x += c * -5;
+        loc.y += s * -5;
+        var dis = Entity.distance(this, loc);
+        if(dis > 1.5) this.moveTo(loc);
+        this.shape = this.tail?
+            shapes.get("square"):
+            shapes.get("snake-tail");
+        head.tail = true;
+        this.charging = head.charging;
+        if(head.dead) {
+            this.rad = this.r;
+            delete this.head;
+        }
+        this.r = atan(this.vy, this.vx);
+    }
+    getFollow() {
+        return this.parent;
+    }
+    team = TEAM.GOOD;
+    hits = TEAM.BAD;
+    // coll = 0;
+    shape = shapes.get("snake-tail");
+    color = "#fff";
+}
 var main;
 var mains = [];
 var bosses = new Set;
@@ -4344,6 +4468,10 @@ onload = () => {
             players.push(new TheMaster);
             players2.push(new TheMaster(1));
         }
+        // if(saveData.level >= 25) {
+        //     players.push(new TheSnek);
+        //     players2.push(new TheSnek(1));
+        // }
     };
 }
 
@@ -4379,7 +4507,7 @@ onresize = () => {
     background.overlay.width = game.width;
     background.overlay.height = game.height;
 
-    if(background.colors) {
+    if(enemies && enemies.length) {
         background.draw();
     }
 };
@@ -4456,9 +4584,33 @@ function levelName(level) {
             // ctx.fillRect(0, 0, game.width, game.height);
             ctx.drawImage(background.canvas, 0, 0);
             ctx.drawImage(background.overlay, 0, 0);
-            if(TIME++ % 3 == 0) {
-                background.shadow();
-            }
+            var i = 0;
+            bosses.forEach(blob => {
+                var l = 5;
+                var w = game.width * 5/8;
+                var x = (game.width - w)/2;
+                var h = scale;
+                var y = game.height - (i * 1.5 + 1) * h - l/2;
+                ctx.strokeStyle = blob.color;
+                ctx.fillStyle = blob.color2 || blob.color;
+                ctx.lineWidth = l;
+                var hp = blob.hp;
+                if(hp < 0) hp = 0;
+                ctx.fillRect(x, y, w * (hp/blob.xHp), h);
+                if(blob.hp2) {
+                    var hp = blob.hp2;
+                    if(hp < 0) hp = 0;
+                    ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
+                    ctx.fillRect(x, y, w * (hp/blob.xHp), h);
+                }
+                ctx.strokeRect(x, y, w, h);
+                var s = 1 + 5/scale;
+                blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
+                if(!enemies.includes(blob)) {
+                    bosses.delete(blob);
+                }
+                ++i;
+            });
             var nxp = [];
             for(let xp of exp) {
                 xp.update();
@@ -4495,33 +4647,9 @@ function levelName(level) {
                     }
                 }
             }
-            var i = 0;
-            bosses.forEach(blob => {
-                var l = 5;
-                var w = game.width * 5/8;
-                var x = (game.width - w)/2;
-                var h = scale;
-                var y = game.height - (i * 1.5 + 1) * h - l/2;
-                ctx.strokeStyle = blob.color;
-                ctx.fillStyle = blob.color2 || blob.color;
-                ctx.lineWidth = l;
-                var hp = blob.hp;
-                if(hp < 0) hp = 0;
-                ctx.fillRect(x, y, w * (hp/blob.xHp), h);
-                if(blob.hp2) {
-                    var hp = blob.hp2;
-                    if(hp < 0) hp = 0;
-                    ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
-                    ctx.fillRect(x, y, w * (hp/blob.xHp), h);
-                }
-                ctx.strokeRect(x, y, w, h);
-                var s = 1 + 5/scale;
-                blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
-                if(!enemies.includes(blob)) {
-                    bosses.delete(blob);
-                }
-                ++i;
-            });
+            if(TIME++ % 2 == 0) {
+                background.shadow();
+            }
             var txt = levelName(level);
             ctx.font = `${scale}px Arial`;
             ctx.fillStyle = expert? "#f0d": "#fff";
@@ -4592,7 +4720,7 @@ function levelName(level) {
                 restart();
             }
 
-            if(keys.use("Enter")) console.log(enemies);
+            // if(keys.use("Enter")) console.log(enemies);
             if(keys.use("Minus")) {
                 --volumeLevel;
                 if(volumeLevel < 0) volumeLevel = 0;
@@ -4615,8 +4743,8 @@ function levelName(level) {
             if(!allDead && (Survival? timeLeft <= 0: arr.length == 0)) {
                 TIME = 0;
                 if(!Survival) {
-                    main.nextLevel();
                     enemies = [main];
+                    main.nextLevel();
                 }
                 if(main.dead) {
                     main.x = mains[1].x;
@@ -4626,8 +4754,8 @@ function levelName(level) {
                 main.dead = 0;
                 if(mains[1]) {
                     if(!Survival) {
-                        mains[1].nextLevel();
                         enemies.push(mains[1]);
+                        mains[1].nextLevel();
                     }
                     if(mains[1].dead) {
                         mains[1].x = main.x;
@@ -4877,20 +5005,20 @@ function nextLevel() {
             }
         break;
         case 25:
-            var head = new Snake;
-            var parts = [head];
-            head.spawn();
-            enemies.push(head);
-            for(let i = 1; i < 20; i++) {
-                var blob = new Snake(head);
-                parts.push(blob);
-                blob.spawn();
-                enemies.push(blob);
-                head = blob;
-            }
-            var healthbar = new SnakeHealth(...parts);
-            bosses.add(healthbar);
-            enemies.push(healthbar);
+            // var head = new Snake;
+            // var parts = [head];
+            // head.spawn();
+            // enemies.push(head);
+            // for(let i = 1; i < 20; i++) {
+            //     var blob = new Snake(head);
+            //     parts.push(blob);
+            //     blob.spawn();
+            //     enemies.push(blob);
+            //     head = blob;
+            // }
+            // var healthbar = new SnakeHealth(...parts);
+            // bosses.add(healthbar);
+            // enemies.push(healthbar);
         break;
         case 26:
             for(let i = 0; i < 10; i++) {
@@ -4916,8 +5044,8 @@ function nextLevel() {
                 enemies.push(blob);
             }
         break;
-        case 28:
-            for(let i = 0; i < 5; i++) {
+        case 29:
+            for(let i = 0; i < 4; i++) {
                 var blob = new Gobble();
                 blob.spawn();
                 enemies.push(blob);
