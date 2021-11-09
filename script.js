@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//NEW
+//SPACE
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
@@ -2942,7 +2942,7 @@ class BulletHell extends Enemy{
     s = 1.5;
     color = "#f00";
     color2 = "#afa";
-    shape = shapes.get("square.4");
+    shape = shapes.get("square-2");
     shape2 = shapes.get("square-ring");
     phase = 0;
     time = 0;
@@ -3138,6 +3138,9 @@ class Player extends Entity{
             }else if(keys.has("ShiftLeft")) {
                 this.ability(keys.get("ShiftLeft"), mrad, srad);
                 keys.set("ShiftLeft", 2);
+            }else if(keys.has("Space")) {
+                this.ability(keys.get("Space"), mrad, srad);
+                keys.set("Space", 2);
             }
             this.touchv2();
         }
@@ -4326,7 +4329,7 @@ class TheHell extends TheGunner{
     }
     color = "#f00";
     color2 = "#afa";
-    shape = shapes.get("square.4");
+    shape = shapes.get("square-2");
     shape2 = shapes.get("square-ring");
 }
 {
@@ -4636,7 +4639,7 @@ onload = () => {
                 if(menu == 1) --selLvl;
             }
         }
-        if(keys.use("Enter")) {
+        if(keys.use("ShiftRight")) {
             multi = !multi;
         }
         if(gamepads.length < 2) {
@@ -4661,8 +4664,7 @@ onload = () => {
         // selLvl = 15;
         menu += menus;
         menu %= menus;
-        if(keys.get("Space") == 1 || buttonClick(startButton)) {
-            keys.set("Space", 2);
+        if(keys.use("Enter") || buttonClick(startButton)) {
             mainMenu.active = false;
             level = selLvl + 1;
             restart();
@@ -4973,7 +4975,7 @@ function levelName(level) {
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
                 Survival = false;
-            }else if((allDead && (keys.use("Space") || A_button || X_button)) || buttonClick(restartButton) || Y_button) {
+            }else if((allDead && (keys.use("Enter") || A_button || X_button)) || buttonClick(restartButton) || Y_button) {
                 restart();
             }
 
