@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//SPACE
+//BREAD
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
@@ -1791,7 +1791,11 @@ class MafiaInvasion extends Mafia{
             this.xHp = 20;
             this.hp2 = 20;
         }
-
+        this.spawn();
+    }
+    spawn() {
+        this.x = -1;
+        this.y = -1;
     }
     movement() {
         this.tick();
@@ -1812,10 +1816,10 @@ class MafiaInvasion extends Mafia{
             return keep;
         });
     }
+    screenlock() {}
     xp = 10;
     time = 0;
     team = TEAM.BAD;
-    nohit = TEAM.GOOD + TEAM.BAD + TEAM.BULLET;
     hits = 0;
     coll = 0;
     s = 0;
@@ -2829,6 +2833,9 @@ class BulletHell extends Enemy{
         if(!expert) {
             this.spd *= .5;
         }
+        this.goal = new Point;
+        this.goal.s = this.s;
+        this.god = true;
     }
     // team = TEAM.BAD + TEAM.BULLET;
     tick() {
@@ -2840,6 +2847,7 @@ class BulletHell extends Enemy{
                 this.r = 0;
                 if(++this.time <= 100 && this.time % (expert? 10: 20) == 0) {
                     this.burstShot();
+                    this.god = false;
                 }else
                 if(this.time == (expert? 150: 200)) {
                     this.boom();
@@ -2847,23 +2855,48 @@ class BulletHell extends Enemy{
                 if(this.time == (expert? 200: 300)) {
                     this.time = 0;
                     this.phase = 1;
-                    this.r = random(PI2);
+                    this.r = PI * 1.25;
                 }
             break;
             case 1:
-                this.move(this.r);
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                // if(this.hitWall) {
+                //     this.r = atan(this.vy, this.vx);
+                // }
+                if(this.phase == 1) {
+                    this.goal.x = 0;
+                    this.goal.y = 0;
+                }else if(this.phase == 2) {
+                    this.goal.x = game.w - this.s;
+                    this.goal.y = 0;
+                }else if(this.phase == 3) {
+                    this.goal.x = game.w - this.s;
+                    this.goal.y = game.h - this.s;
+                }else if(this.phase == 4) {
+                    this.goal.x = 0;
+                    this.goal.y = game.h - this.s;
+                }else if(this.phase == 5) {
+                    this.goal.x = 0;
+                    this.goal.y = 0;
+                }else if(this.phase == 6) {
+                    this.goal.x = (game.w - this.s) * .3;
+                    this.goal.y = (game.h - this.s) * .3;
+                }
+                this.moveTo(this.goal);
                 if(++this.time % 5 == 0) {
                     this.sideShot();
                 }
-                if(this.hitWall) {
-                    this.r = atan(this.vy, this.vx);
-                }
-                if(this.time == 200) {
-                    this.phase = 2;
-                    this.time = 0;
+                this.r = atan(this.vy, this.vx);
+                if(this.inGoal()) {
+                    ++this.phase;
+                    // this.time = 0;
                 }
             break;
-            case 2:
+            case 7:
                 this.r += PI * .075;
                 if(++this.time % (expert? 2: 10) == 0) {
                     this.spinShot();
@@ -2876,18 +2909,31 @@ class BulletHell extends Enemy{
             break;
         }
     }
+    inGoal() {return Entity.isTouching(this.goal, this)}
     burstShot() {
         var u = PI * .25;
         for(let i = 0; i < 8; i++) {
             var rad = i * u;
             var blob = new Bullet(this);
             Bullet.position(blob, rad, this);
-            blob.time = 40;
+            blob.time = 60;
             blob.spd *= .5;
+            blob.s = expert? .75: .5;
             blob.coll = 0;
+            blob.hit = what => {
+                if(this.hits & what.team) {
+                    what.attacked({enemy: this, atk: this.atk});
+                    // what.vx += cos(this.r) * 3;
+                    // what.vy += sin(this.r) * 3;
+                    if(what instanceof Bullet) {
+                        what.dead = DEAD;
+                    }
+                }
+            }
             blob.nocoll = TEAM.BULLET;
-            blob.nohit = TEAM.BULLET;
-            blob.team = TEAM.BULLET;
+            // blob.hits = TEAM.BULLET + TEAM.GOOD;
+            blob.team = TEAM.BULLET + TEAM.BAD;
+            blob.nohit = TEAM.BAD;
             enemies.push(blob);
         }
     }
@@ -2899,10 +2945,13 @@ class BulletHell extends Enemy{
             Bullet.position(blob, rad, this);
             blob.time = expert? 10: 30;
             blob.spd *= expert? 2: .5;
+            blob.s = expert? .75: .5;
             blob.coll = 0;
             blob.nocoll = TEAM.BULLET;
-            blob.nohit = TEAM.BULLET;
-            blob.team = TEAM.BULLET;
+            // blob.hits = TEAM.BULLET + TEAM.GOOD;
+            // blob.nohit = TEAM.BULLET;
+            blob.team = TEAM.BULLET + TEAM.BAD;
+            blob.nohit = TEAM.BAD;
             enemies.push(blob);
         }
     }
@@ -2910,15 +2959,25 @@ class BulletHell extends Enemy{
         var o = this.r - PI * .5;
         for(let i = 0; i < 2; i++) {
             var rad = o + PI * i;
-            var blob = new Bullet(this);
+            var blob = new Mover(this);
             Bullet.position(blob, rad, this);
-            blob.team = TEAM.BULLET;
+            blob.team = TEAM.BULLET + TEAM.BAD + TEAM.GOOD;
+            blob.nohit = TEAM.BAD;
+            // blob.hits = TEAM.BULLET + TEAM.GOOD;
             // blob.time = 10;
+            blob.s = expert? .75: .5;
+            blob.shape2 = 0;
+            blob.dead = -5;
             blob.hp = 0;
+            blob.color = this.color;
+            blob.color2 = this.color2;
             // blob.spd *= ;
             blob.coll = 0;
             blob.nocoll = TEAM.BULLET;
-            blob.nohit = TEAM.BULLET;
+            for(let i = 0; i < 10; i++) blob.tick();
+            blob.spd = 0;
+            blob.xp = 0;
+            // blob.nohit = TEAM.BULLET;
             enemies.push(blob);
         }
     }
@@ -2928,13 +2987,16 @@ class BulletHell extends Enemy{
             var rad = o + PI * i;
             var blob = new Bullet(this);
             Bullet.position(blob, rad, this);
-            blob.time = 10;
-            blob.team = TEAM.BULLET;
+            blob.hp = 0;
+            blob.s = expert? .75: .5;
+            blob.team = TEAM.BULLET + TEAM.BAD;
+            blob.nohit = TEAM.BAD;
+            // blob.hits = TEAM.BULLET + TEAM.GOOD;
             // blob.hp = 0;
             // blob.spd *= ;
             blob.coll = 0;
             blob.nocoll = TEAM.BULLET;
-            blob.nohit = TEAM.BULLET;
+            // blob.nohit = TEAM.BULLET;
             enemies.push(blob);
         }
     }
@@ -3180,12 +3242,15 @@ class TheGunner extends Player{
     shape = shapes.get("square.4");
     color2 = "#aaf";
     shape2 = shapes.get("square.4");
+    ccolor = "#faa";
     constructor(id) {
         super(id);
         if(id == 1) {
             this.color = "#5ff";
             this.color2 = "#aff"; 
+            this.ccolor = "#faf";
         }
+        this.ncolor = this.color2;
     }
     get alpha() {
         if(this.lastSkill > 40) return .4;
@@ -3197,7 +3262,13 @@ class TheGunner extends Player{
             this.team = 0;
             this.hits = 0;
             this.coll = 0;
+            this.color2 = this.ccolor;
+        }else if(this.lastSkill) {
+            this.team = TEAM.GOOD;
+            this.hits = TEAM.BAD;
+            this.coll = TEAM.BAD;
         }else{
+            this.color2 = this.ncolor;
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
             this.coll = TEAM.BAD;
@@ -3376,13 +3447,16 @@ class TheDasher extends Player{
     ability(key, mrad, srad) {
         if(!this.lastAbility) {
             var u = PI/8;
+            var obj = new Bullet(this);
+            obj.coll = TEAM.BAD;
             for(let i = 0; i < PI2; i += u) {
                 var blob = new Bullet(this, i);
                 blob.coll = TEAM.BAD;
                 blob.hits = TEAM.BAD + TEAM.BULLET;
+                blob.hit = what => obj.hit(what);
                 blob.time = 1;
                 blob.spd /= 2;
-                blob.atk = 0.5;
+                // blob.atk = 0.5;
                 blob.m = 50;
                 enemies.push(blob);
             }
@@ -3427,8 +3501,8 @@ class Minion extends Brain{
 }
 var minionSelected = 0;
 class SummonerClass extends Player{
-    constructor() {
-        super();
+    constructor(id) {
+        super(id);
         this.selected = minionSelected;
         this.selected %= this.summons.length;
     }
@@ -3696,6 +3770,7 @@ class TheMagician extends SummonerClass{
     color = "#5f5";
     color2 = "#cfc";
     rec = 0.2;
+    maxSum = 5;
     shape2 = shapes.get("tophat");
     constructor(id) {
         super(id);
@@ -4276,59 +4351,94 @@ class TheHell extends TheGunner{
         super(id);
         this.nspd = this.spd;
         this.spd = 0;
+        this.ncolor = this.color2;
     }
     go(rad, dis) {
         this.skill(rad + PI);
     }
+    tickSkill() {
+        if(this.lastShot) {
+            this.color2 = this.color;
+        }else{
+            this.color2 = this.ncolor;
+        }
+    }
     skill(r) {
         var a = .5;
         var rad = r;
-        var u = PI * .5 * a;
-        r -= u * .5;
+        var u = PI * .25 * a;
+        r -= u * 1.5;
         // var end = r + u * 5;
         if(!this.lastShot) {
             // --this.bullets;
-            for(let i = 0; i < 2; ++i) {
+            this.team = TEAM.GOOD;
+            this.hits = TEAM.BAD;
+            this.coll = TEAM.BAD;
+            var obj = new Bullet(this);
+            obj.coll = TEAM.BAD;
+
+            for(let i = 0; i < 4; ++i) {
                 let rad = r + i * u;
                 var blob = new Bullet(this, rad);
-                this.team = TEAM.GOOD;
-                this.hits = TEAM.BAD;
-                this.coll = TEAM.BAD;
-                blob.coll = TEAM.BAD;
+                // blob.coll = TEAM.BAD;
                 // blob.spd *= .75;
-                blob.hp = 0;
+                // blob.hp = 0;
+                blob.time = 5;
+                blob.hit = what => obj.hit(what);
+                blob.coll = 0;
+                // blob.nocoll = TEAM.BULLET;
                 // blob.atk = .5;
+                blob.m = 75;
                 enemies.push(blob);
             }
-            this.spd = this.nspd * 5;
+            this.spd = this.nspd * 10;
             this.move(rad + PI);
             this.spd = 0;
-            this.lastShot = 2;
+            this.lastShot = 5;
             sounds.MachineGun.play();
         }
     }
     ability() {
-        var {player} = this;
-        if(player && player.dead) delete this.player;
-        if(player) {
-            this.spd = this.nspd;
-            this.moveTo(player);
-            this.spd = 0;
+        // var {player} = this;
+        // if(player && player.dead) delete this.player;
+        // if(player) {
+        //     this.spd = this.nspd;
+        //     this.moveTo(player);
+        //     this.spd = 0;
+        // }
+
+        if(!this.lastShot) {
+            var u = PI * .125;
+            var obj = new Bullet(this);
+            obj.coll = TEAM.BAD;
+            for(let i = 0; i < PI2; i += u) {
+                var blob = new Bullet(this, i);
+                blob.coll = TEAM.BAD;
+                blob.hits = TEAM.BAD + TEAM.BULLET;
+                blob.hit = what => obj.hit(what);
+                blob.time = 10;
+                blob.spd /= 2;
+                blob.atk = 0.5;
+                blob.m = 50;
+                enemies.push(blob);
+            }
+            sounds.Explode.play();
+            this.lastShot = 40;
         }
     }
-    register(what) {
-        if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
-        var dis = Entity.distance(this, what);
-        if(!this.player) {
-            this.player = what;
-            this.dis = dis;
-        }else if(dis < this.dis) {
-            this.player = what;
-            this.dis = dis;
-        }
-    }
-    color = "#f00";
-    color2 = "#afa";
+    // register(what) {
+    //     if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
+    //     var dis = Entity.distance(this, what);
+    //     if(!this.player) {
+    //         this.player = what;
+    //         this.dis = dis;
+    //     }else if(dis < this.dis) {
+    //         this.player = what;
+    //         this.dis = dis;
+    //     }
+    // }
+    color = "#f0f";
+    color2 = "#ffa";
     shape = shapes.get("square-2");
     shape2 = shapes.get("square-ring");
 }
