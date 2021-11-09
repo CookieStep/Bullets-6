@@ -1,7 +1,8 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//SNEK
+//NEW
+//https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
     SOLOLEARN: Symbol()
@@ -14,7 +15,14 @@ const Enviroment = undefined;
 
 //Dasher - https://jummbus.bitbucket.io/#j4N07Unnamedn311s1k0l02e0bt38m0a7g0dj07i0r1O_U0000000000o22100T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou05q1d100f8y1z6C1c0h0H-JJAArrqiih999T5v0kL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00T8v0pL0OaD0Oud9q1d100f6y1z2C0b028P8zcycN8h4w004h80000h8x4y8y8y8y8y8y8y4g008x4p24bFyUzj8Y2CbEAt60OhBVozF4tcn9CnjasJG6EQyeAhQJNIZDj8X17iVcmwbAW97i8Wmi5E2ViAhR2eE2CbAxq5q25EkGoJ2B0yQak4bgelR1q5mGbgFl1q5aGbgFlhq0I1hFQWd6FlEQqd42CnUhczOmhjcL87jQO_hj8ZbarcWs2Chyp7g8W96Ca92Q1sAhQ2eBkEM792Q1q0J0mwbg5Eka52Abg5E2Q1q0J0mxgEk001500n_E57EUkG0E6nEUpw0E7DEUuw00
 
+
 //Stage 1 - https://www.beepbox.co/2_3/#6n32s6kbl00e0nt7m0afg0nj7i0r1o32000T0w4f2d1c0h0v0T0w1f1d1c0h0v0T0w5f1d1c0h0v1T2w0d1v2T2w0d1v3b00000000wz92cA9m4xci4QlD4xci4QlD000h4h4h000h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4hp27FF70BQNp311E2CrhzE3BrePN0LG8qMRxSP7g7bStDB5ZAd8q0XhzE3BrePjfELN8qgQ1Sz7g7aUDpFyg6Ed0kPaVEdgq0YkCdgqwQ1jeCGLb3k7RoqwQ1WHGwR1E3Rnd1G3g7GqGQNY3Uw9zWMdEq0ZqoW0VnzePj4wc66wapy9zE3B97jIV9vIxwwRxSP7g7bStDabZAdoqwXpzE3BXeOCvhvN8qgQ1SIEdgq0V5osLytLabZAdoq0Xmk6Ed0syIenIXumnX8qgQ1SQNq3k6wapJ9zk6Ed0kPFGHOMR1Zm6Ed0uGWEdgq0ZlPgqwQ1WCGJcv0-8aC030QQQQQQQQQQQQQQRMdddddddddddddddk1jjjjjjjjjjjjjj1TQQQQQQQQQQQQQQwaoD66wMM1xJceEzghE8Q4qyd16Ezgh0Fws2w50a0k0E1g2w50a0k0E1g2w50a0g0a0k0E1g2w50a0mwE1g2w50a0k0E00
+
+//Level1 - https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l04e0ft2mm0a7g0jj07i0r1O_U00000000o3330T0v0pL0OaD0Ou00q1d100f7y1z8C1w5c0h0X0T0v0fL0OaD0Ou00q0d100f8y0z1C0wbc0h0X1T0v0uL0OaD0Ou00q1d100fay0z1C0wbc0h0X0T2v05L0OaD0Ou15q0d100f8y0z1C2w0Gc0h0b01ci4Uq7hkk0018i4x8j4Rhk4Nc001klpmkPcOgB00000000000000p27PFyy0I6bh5EyFAo3Ot6yCkyej5FyQiDppf8UBBek5EyQhq8KjOB61Sek5G2QiDppj8VjasEbh5EyQhsDBadjoVgmEbhatBBczBc1VgmGbh5EyFBUEnV8mAbhEkhsFlV0mAbj5EyUynV8mg5FkGoKiFswbi5EyQhtJBqdryek5G2QiDpVD8VjasEbh5EyQhsBBqdjoVgmEbhatDBszAs2VcmEbh5EyVnbr4zOoJcmykXb9V7dpiQPnMskFIIRY6BhBDjWlpmCq-z6Jmmq-FmSOJrAoSFRGQPFZmESHreDSajEKSPnQpykJRiKI-rQDqFHCJso4lck1QAOch5j54Ef0zhOtj8yViFB2_0qcmFjO8KkFpcQsDiO8KjGVkLO5mbl5AiCyrJ4mGbgcJcL48KmFX4n9kIEqejHp4nakIJkF4snaksybBaKkd79RcybBaCRGhsFhS8KkGpkLOJ4mFlO8KlGVgLOJ4FAoDhEQkOY8g6jFQqekFw0
+
+//Summomner - https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e0ft2Qm0a7g0fj07i0r1O_U00000000o2320T0v0pL0OaD0Ou00q1d100f6y1z6C0w5c0h0X1T0v0hL0OaD0Ou00q0d100f6y1z8C0w2c0h8X0T0v0pL0OaD0Ou00q0d100f8y0z1C2w5c0Gc0h0X1T2v0fL0OaD0Ou02q0d100f8y0z1C2w0Gc0h0b4N8j4xci4N8i4x8i4x8i4w00000j4xci000h4h4h4h4p22JFB-AChV2D2kAODj5NixgwGJb41uQSJiJiSoKlEkaOpExcnNfqlGRbyoKmEkaReHBNglsLi_bM2nMhvEBYynwkO_3Aqp7wieCCkWgK9M5eziAsIbSKRERGeM5OB2xkjd482QO_j8QOfk8WGpjF2VmJhHkqmk51j8M0pt0OWFBQ3b00
+
+//Level 1 - https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2Qm0afg0fj07i0r1Oaa48kk1uU00000000o3220T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT0v0pL0OaD0Ou00q1d100f7y1z8C1wbc0h0X0T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p23fFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00JIU_4cC2orjfz_8SPeSPzZuZXQrpYvWZXPjIIU_nJdNDN_AXTjMA00
 
 {
     let canvas = document.createElement("canvas"),
@@ -131,8 +139,16 @@ const Enviroment = undefined;
             var rs = 1/scale;
             point.s = s * rs;
 
+            function dis(blob) {
+                if(blob instanceof Player) {
+                    if(Entity.distance(blob, point) < 5) {
+                        return 0;
+                    }else return 1000;
+                }else return Entity.distance(point, blob);
+            }
+
             function getClosest() {
-                var [closest] = enemies.sort((a, b) => Entity.distance(point, a) - Entity.distance(point, b));
+                var [closest] = enemies.sort((a, b) => dis(a) - dis(b));
                 return randomOf(colorArray(closest));
             }
             function colorArray(blob) {
@@ -1321,6 +1337,22 @@ class Bullet extends Mover{
     spd = .6;
     // coll = 0;
 }
+class CurveBullet extends Bullet{
+    tick() {
+        super.tick();
+        var rad = atan(this.vy, this.vx) + PI * .5;
+        this.off += PI * .1;
+        var pow = cos(this.off + rad) * .75;
+        var c = cos(rad);
+        var s = sin(rad);
+        this.x += pow * c;
+        this.y += pow * s;
+    }
+    constructor(parent, rad) {
+        super(parent, rad);
+        this.off = PI * floor(random(2));
+    }
+}
 class Chaser extends Brain{
     color = "#f5a";
     shape = shapes.get("square.4");
@@ -1621,6 +1653,7 @@ class Bomb extends Chill{
     }
 }
 class Mafia extends Enemy{
+    xp = 7;
     tick() {}
     register(what) {
         this.registerPlayer(what);
@@ -1720,7 +1753,8 @@ class MafiaTurret extends Turret{
         ctx.resetTransform();
         ctx.restore();
     }
-    range = 5;
+    xp = 7;
+    range = 10;
     constructor() {
         super();
         if(!expert) this.range = 7;
@@ -1735,6 +1769,7 @@ class MafiaTurret extends Turret{
             blob.coll = TEAM.BULLET + TEAM.GOOD;
             var m = expert? 2: 3;
             blob.spd  /= m;
+            blob.spd *= 2;
             blob.time = 10;
             enemies.push(blob);
             this.lastShot = 40;
@@ -1779,7 +1814,8 @@ class MafiaInvasion extends Mafia{
     }
     xp = 10;
     time = 0;
-    team = 0;
+    team = TEAM.BAD;
+    nohit = TEAM.GOOD + TEAM.BAD + TEAM.BULLET;
     hits = 0;
     coll = 0;
     s = 0;
@@ -1850,7 +1886,7 @@ class MafiaCharger extends Mafia{
     constructor() {
         super();
         if(expert) {
-            this.spd = 0.7;
+            this.spd = .75;
         }
     }
     tick() {
@@ -1865,14 +1901,14 @@ class MafiaCharger extends Mafia{
                 this.vx = 0;
                 this.vy = 0;
             }
-            if(dis < (expert? 7: 10)) {
+            if(dis < (expert? 15: 10)) {
                 this.moveTo(player);
                 sounds.Dash.play();
             }
         }
     }
     m = 5;
-    spd = 0.3;
+    spd = 0.5;
     friction = 0.99;
 }
 class Spinner extends Chill{
@@ -1988,7 +2024,7 @@ class Slime extends Enemy{
 class Runner extends Mover{
     constructor() {
         super();
-        this.spd *= 1.5;
+        this.spd *= 1.3;
     }
     color = "#055";
     color2 = "#7f7";
@@ -2744,6 +2780,7 @@ class Gobble extends Enemy{
         if(expert) this.spd *= 1.5;
     }
     spd = .05;
+    coll = TEAM.BULLET;
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
@@ -2772,6 +2809,148 @@ class Gobble extends Enemy{
     color = "#0a0";
     color2 = "#f0f";
 }
+class BulletHell extends Enemy{
+    static type = "MiniBoss";
+    static name = "Spinner";
+    attacked(obj) {
+        super.attacked(obj);
+        if(this.god) return;
+        
+        var a = 5 * obj.atk;
+        var o = random(PI);
+        for(let i = 0; i < a; i++) {
+            var blob = new Xp;
+            Xp.position(blob, i * PI2/a + o, this);
+            exp.push(blob);
+        }
+    }
+    constructor() {
+        super();
+        if(!expert) {
+            this.spd *= .5;
+        }
+    }
+    // team = TEAM.BAD + TEAM.BULLET;
+    tick() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(!player) player = this.getMain();
+        switch(this.phase) {
+            case 0:
+                this.r = 0;
+                if(++this.time <= 100 && this.time % (expert? 10: 20) == 0) {
+                    this.burstShot();
+                }else
+                if(this.time == (expert? 150: 200)) {
+                    this.boom();
+                }else
+                if(this.time == (expert? 200: 300)) {
+                    this.time = 0;
+                    this.phase = 1;
+                    this.r = random(PI2);
+                }
+            break;
+            case 1:
+                this.move(this.r);
+                if(++this.time % 5 == 0) {
+                    this.sideShot();
+                }
+                if(this.hitWall) {
+                    this.r = atan(this.vy, this.vx);
+                }
+                if(this.time == 200) {
+                    this.phase = 2;
+                    this.time = 0;
+                }
+            break;
+            case 2:
+                this.r += PI * .075;
+                if(++this.time % (expert? 2: 10) == 0) {
+                    this.spinShot();
+                }
+                if(this.time == 200) {
+                    this.r = 0;
+                    this.phase = 0;
+                    this.time = 0;
+                }
+            break;
+        }
+    }
+    burstShot() {
+        var u = PI * .25;
+        for(let i = 0; i < 8; i++) {
+            var rad = i * u;
+            var blob = new Bullet(this);
+            Bullet.position(blob, rad, this);
+            blob.time = 40;
+            blob.spd *= .5;
+            blob.coll = 0;
+            blob.nocoll = TEAM.BULLET;
+            blob.nohit = TEAM.BULLET;
+            blob.team = TEAM.BULLET;
+            enemies.push(blob);
+        }
+    }
+    boom() {
+        var u = PI * .125;
+        for(let i = 0; i < 16; i++) {
+            var rad = i * u;
+            var blob = new Bullet(this);
+            Bullet.position(blob, rad, this);
+            blob.time = expert? 10: 30;
+            blob.spd *= expert? 2: .5;
+            blob.coll = 0;
+            blob.nocoll = TEAM.BULLET;
+            blob.nohit = TEAM.BULLET;
+            blob.team = TEAM.BULLET;
+            enemies.push(blob);
+        }
+    }
+    sideShot() {
+        var o = this.r - PI * .5;
+        for(let i = 0; i < 2; i++) {
+            var rad = o + PI * i;
+            var blob = new Bullet(this);
+            Bullet.position(blob, rad, this);
+            blob.team = TEAM.BULLET;
+            // blob.time = 10;
+            blob.hp = 0;
+            // blob.spd *= ;
+            blob.coll = 0;
+            blob.nocoll = TEAM.BULLET;
+            blob.nohit = TEAM.BULLET;
+            enemies.push(blob);
+        }
+    }
+    spinShot() {
+        var o = this.r - PI * .5;
+        for(let i = 0; i < 2; i++) {
+            var rad = o + PI * i;
+            var blob = new Bullet(this);
+            Bullet.position(blob, rad, this);
+            blob.time = 10;
+            blob.team = TEAM.BULLET;
+            // blob.hp = 0;
+            // blob.spd *= ;
+            blob.coll = 0;
+            blob.nocoll = TEAM.BULLET;
+            blob.nohit = TEAM.BULLET;
+            enemies.push(blob);
+        }
+    }
+    spd = 0.3;
+    s = 1.5;
+    color = "#f00";
+    color2 = "#afa";
+    shape = shapes.get("square.4");
+    shape2 = shapes.get("square-ring");
+    phase = 0;
+    time = 0;
+    coll = 0;
+    nocoll = TEAM.BULLET;
+    hp = 15;
+    xHp = 15;
+}
 var deadzone = 0.1;
 var dead = (num, dual) => {
     if(num < deadzone && (!dual || num > -deadzone)) return 0;
@@ -2787,6 +2966,9 @@ class Player extends Entity{
     spawn() {
         this.x = (game.w - this.s)/2;
         this.y = (game.h - this.s)/2;
+    }
+    go(rad, dis) {
+        this.move(rad, dis);
     }
 	touchv2() {
 		var {touch, touch2} = this;
@@ -2811,7 +2993,7 @@ class Player extends Entity{
             var dis = dist(touch.mx, touch.my);
             var inside = dis > scale;
 			if(inside) {
-                this.move(mrad);
+                this.go(mrad);
                 this.mrad = mrad;
             }
 			this.touch = touch;
@@ -2876,7 +3058,7 @@ class Player extends Entity{
         if(this.mrad === false) {
             if(dis > 0.1) {
                 this.mrad = rad;
-                this.move(rad, dis);
+                this.go(rad, dis);
             }
         }
 
@@ -2935,7 +3117,7 @@ class Player extends Entity{
             if(mx || my) {
                 var rad = atan(my, mx);
                 // this.r = rad;
-                this.move(rad);
+                this.go(rad);
                 var mrad = rad;
                 this.mrad = mrad;
             }
@@ -3077,6 +3259,7 @@ class TheDasher extends Player{
             what.color = this.color;
             what.color2 = this.color2;
             what.color3 = this.color3;
+            what.atk = 0.5;
         }else if(what.hp <= 0 && this.god) {
             what.team = this.team + TEAM.BAD;
             what.hits = this.hits;
@@ -3101,7 +3284,7 @@ class TheDasher extends Player{
                 var u = PI2/8;
                 for(let i = 0; i < PI2; i += u) {
                     var blob = new Bullet(what, i);
-                    blob.team = TEAM.GOOD;
+                    blob.team = TEAM.GOOD + TEAM.BULLET;
                     blob.hits = TEAM.BAD;
                     blob.coll = 0;
                     blob.time = 10;
@@ -3192,15 +3375,19 @@ class TheDasher extends Player{
             var u = PI/8;
             for(let i = 0; i < PI2; i += u) {
                 var blob = new Bullet(this, i);
-                blob.coll = 0;
+                blob.coll = TEAM.BAD;
+                blob.hits = TEAM.BAD + TEAM.BULLET;
                 blob.time = 1;
                 blob.spd /= 2;
+                blob.atk = 0.5;
+                blob.m = 50;
                 enemies.push(blob);
             }
             sounds.Explode.play();
             this.lastAbility = 50;
         }
     }
+    atk = 3;
 }
 class Minion extends Brain{
     color = "#f5a";
@@ -3440,11 +3627,18 @@ class TheSummoner extends SummonerClass{
         this.color = this.ncolor;
         this.color2 = this.ccolor;
     }
+    onXp() {
+        var pets = floor(this.p/5);
+        if(pets < (this.maxSum - this.alive.length)) {
+            this.p += 1.5;
+        }
+    }
     shape = shapes.get("bullet");
     shape2 = shapes.get("square.4");
     summonSound = sounds.Summon;
     summons = [Chill, Walker, Mover, Minion];
     cloak = 0;
+    rec = 0.05;
     tickSkill() {
         if(this.mrad === false) {
             if(this.cloak > 0) {
@@ -4074,98 +4268,161 @@ class TheMaster extends SummonerClass{
         this.p = 10;
     }
 }
-class TheSnek extends Player{
-    desc = [
-        "Well rounded shooter",
-        "Skill: Shoot",
-        "Ability: Dodge"
-    ];
-    cols = [
-        "#55f",
-        "#aaf",
-        "#aaf"
-    ];
+class TheHell extends TheGunner{
     constructor(id) {
         super(id);
+        this.nspd = this.spd;
+        this.spd = 0;
     }
-    hit(obj) {
-        super.hit(obj);
-        if(obj.hp <= 0) {
-            ++this.food;
-        }else{
-            Entity.collide(this, obj)
+    go(rad, dis) {
+        this.skill(rad + PI);
+    }
+    skill(r) {
+        var a = .5;
+        var rad = r;
+        var u = PI * .5 * a;
+        r -= u * .5;
+        // var end = r + u * 5;
+        if(!this.lastShot) {
+            // --this.bullets;
+            for(let i = 0; i < 2; ++i) {
+                let rad = r + i * u;
+                var blob = new Bullet(this, rad);
+                this.team = TEAM.GOOD;
+                this.hits = TEAM.BAD;
+                this.coll = TEAM.BAD;
+                blob.coll = TEAM.BAD;
+                // blob.spd *= .75;
+                blob.hp = 0;
+                // blob.atk = .5;
+                enemies.push(blob);
+            }
+            this.spd = this.nspd * 5;
+            this.move(rad + PI);
+            this.spd = 0;
+            this.lastShot = 2;
+            sounds.MachineGun.play();
         }
     }
-    god = true;
-    coll = 0;
-    tick() {
-        super.tick();
-        this.makeHead();
-        if(this.mrad) {
-            ++this.ani;
-            this.ani %= 25;
+    ability() {
+        var {player} = this;
+        if(player && player.dead) delete this.player;
+        if(player) {
+            this.spd = this.nspd;
+            this.moveTo(player);
+            this.spd = 0;
         }
     }
-    ani = 0;
-    makeHead() {
-        var d = 25 * .5;
-        var c = abs(this.ani - d) * 0.02 - .25;
-        // var c = 0;
-        this.shape = new Path(ctx => {
-            var a = PI * (0.25 + c);
-            var b = PI * (1.75 - c);
-            ctx.arc(.5, .5, .5, a, b);
-            ctx.lineTo(.7, .5);
-            ctx.closePath();
-            ctx.rect(0, 0, .5, 1);
-        });
-    }
-    body = [];
-    nextLevel() {
-        for(let part of this.body) {
-            part.dead = DEAD;
+    register(what) {
+        if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
+        var dis = Entity.distance(this, what);
+        if(!this.player) {
+            this.player = what;
+            this.dis = dis;
+        }else if(dis < this.dis) {
+            this.player = what;
+            this.dis = dis;
         }
-        var body = new SnekBody(this);
-        this.body = [body];
-        enemies.push(body);
     }
+    color = "#f00";
+    color2 = "#afa";
+    shape = shapes.get("square.4");
+    shape2 = shapes.get("square-ring");
 }
-class SnekBody extends Enemy{
-    constructor(parent) {
-        super();
-        this.parent = parent;
-        Xp.position(this, random(PI2), parent);
-    }
-    tick() {
-        var head = this.getFollow();
-        var loc = {...head};
-        // loc.x += this.vx * 2;
-        // loc.y += this.vy * 2;
-        var c = cos(head.r);
-        var s = sin(head.r);
-        loc.x += c * -5;
-        loc.y += s * -5;
-        var dis = Entity.distance(this, loc);
-        if(dis > 1.5) this.moveTo(loc);
-        this.shape = this.tail?
-            shapes.get("square"):
-            shapes.get("snake-tail");
-        head.tail = true;
-        this.charging = head.charging;
-        if(head.dead) {
-            this.rad = this.r;
-            delete this.head;
+{
+    class TheSnek extends Player{
+        desc = [
+            "Well rounded shooter",
+            "Skill: Shoot",
+            "Ability: Dodge"
+        ];
+        cols = [
+            "#55f",
+            "#aaf",
+            "#aaf"
+        ];
+        constructor(id) {
+            super(id);
         }
-        this.r = atan(this.vy, this.vx);
+        hit(obj) {
+            super.hit(obj);
+            if(obj.hp <= 0) {
+                ++this.food;
+            }else{
+                Entity.collide(this, obj)
+            }
+        }
+        god = true;
+        coll = 0;
+        tick() {
+            super.tick();
+            this.makeHead();
+            if(this.mrad) {
+                ++this.ani;
+                this.ani %= 25;
+            }
+        }
+        ani = 0;
+        makeHead() {
+            var d = 25 * .5;
+            var c = abs(this.ani - d) * 0.02 - .25;
+            // var c = 0;
+            this.shape = new Path(ctx => {
+                var a = PI * (0.25 + c);
+                var b = PI * (1.75 - c);
+                ctx.arc(.5, .5, .5, a, b);
+                ctx.lineTo(.7, .5);
+                ctx.closePath();
+                ctx.rect(0, 0, .5, 1);
+            });
+        }
+        body = [];
+        nextLevel() {
+            for(let part of this.body) {
+                part.dead = DEAD;
+            }
+            var body = new SnekBody(this);
+            this.body = [body];
+            enemies.push(body);
+        }
     }
-    getFollow() {
-        return this.parent;
+    class SnekBody extends Enemy{
+        constructor(parent) {
+            super();
+            this.parent = parent;
+            Xp.position(this, random(PI2), parent);
+        }
+        tick() {
+            var head = this.getFollow();
+            var loc = {...head};
+            // loc.x += this.vx * 2;
+            // loc.y += this.vy * 2;
+            var c = cos(head.r);
+            var s = sin(head.r);
+            loc.x += c * -5;
+            loc.y += s * -5;
+            var dis = Entity.distance(this, loc);
+            if(dis > 1.5) this.moveTo(loc);
+            this.shape = this.tail?
+                shapes.get("square"):
+                shapes.get("snake-tail");
+            head.tail = true;
+            this.charging = head.charging;
+            if(head.dead) {
+                this.rad = this.r;
+                delete this.head;
+            }
+            this.r = atan(this.vy, this.vx);
+        }
+        getFollow() {
+            return this.parent;
+        }
+        team = TEAM.GOOD;
+        hits = TEAM.BAD;
+        // coll = 0;
+        shape = shapes.get("snake-tail");
+        color = "#fff";
     }
-    team = TEAM.GOOD;
-    hits = TEAM.BAD;
-    // coll = 0;
-    shape = shapes.get("snake-tail");
-    color = "#fff";
 }
 var main;
 var mains = [];
@@ -4468,10 +4725,10 @@ onload = () => {
             players.push(new TheMaster);
             players2.push(new TheMaster(1));
         }
-        // if(saveData.level >= 25) {
-        //     players.push(new TheSnek);
-        //     players2.push(new TheSnek(1));
-        // }
+        if(saveData.level >= 25) {
+            players.push(new TheHell);
+            players2.push(new TheHell(1));
+        }
     };
 }
 
@@ -4538,7 +4795,7 @@ var boss = {
     10: Summoner,
     15: MafiaInvasion,
     20: Squish,
-    25: Snake
+    25: BulletHell
 };
 var Survival;
 const ms = 1000/40;
@@ -5005,6 +5262,10 @@ function nextLevel() {
             }
         break;
         case 25:
+            var blob = new BulletHell;
+            blob.spawn();
+            var spawn = new Spawner(blob);
+            enemies.push(spawn);
             // var head = new Snake;
             // var parts = [head];
             // head.spawn();
