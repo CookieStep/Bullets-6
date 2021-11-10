@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//BREAD
+//Control
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
@@ -336,6 +336,7 @@ const Enviroment = undefined;
         BotSummon: new Sound("BotSummon.wav", .7)
     }
 }
+
 var volumeLevel = 10;
 var {
     cos, sin,
@@ -390,7 +391,7 @@ var TEAM = {
     ALLY: a(6)
 };
 var DEAD = 10;
-{
+{//Canvas Shapes
     var Path = class Path extends Path2D{
         /**@param {(path: Path2D) => void} path*/
         constructor(path) {
@@ -517,6 +518,21 @@ var DEAD = 10;
         // spr = 1 - spr;
         wid = 1 - wid;
         path.lineTo(wid, btm);
+        path.closePath();
+        path.rotation = PI / 2;
+    }));
+    shapes.set("big-pointer", new Path(path => {
+        var mid = 1/2;
+        var top = -3/10;
+        var btm = 10/10;
+        // var spl = 1/2;
+        var wid = 20/16;
+        // var spr = 11/16;
+        path.moveTo(top, mid);
+        path.lineTo(btm, 1 - wid);
+        // spr = 1 - spr;
+        wid = 1 - wid;
+        path.lineTo(btm, 1 - wid);
         path.closePath();
         path.rotation = PI / 2;
     }));
@@ -1064,18 +1080,28 @@ class Enemy extends Entity{
             what.attacked({enemy: this, atk: this.atk});
         }
     }
+    attacked(obj) {
+        super.attacked(obj);
+        for(let main of mains) {
+            main.onXp();
+        }
+    }
+    explode() {}
     getMain() {
-        var dis = Entity.distance(mains[0], this);
-        if(mains[1]) {
-            var dis2 = Entity.distance(mains[1], this);
+        let arr = [];
+        let ali = [];
+        for(let main of mains) {
+            var dis = Entity.distance(this, main);
+            arr.push([main, dis]);
+            if(!main.dead) {
+                ali.push([main, dis])
+            }
+        }
+        if(ali.length) arr = ali;
 
-            if(mains[1].dead && mains[0].dead) return mains[0];
-            else if(mains[1].dead) return mains[0];
-            else if(mains[0].dead) return mains[1];
+        arr.sort((a, b) => a[1] - b[1]);
 
-            if(dis > dis2) return mains[1];
-            else return mains[0];
-        }else return main;
+        return arr[0][0];
     }
     registerPlayer(what) {
         if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
@@ -1314,6 +1340,9 @@ class Bullet extends Mover{
             // what.vx += cos(this.r) * 3;
             // what.vy += sin(this.r) * 3;
         }
+    }
+    attacked() {
+        this.hp = 0;
     }
     screenlock() {
         if(super.screenlock()) {
@@ -2834,7 +2863,7 @@ class BulletHell extends Enemy{
             this.spd *= .5;
         }
         this.goal = new Point;
-        this.goal.s = this.s;
+        this.goal.s = this.s * 2;
         this.god = true;
     }
     // team = TEAM.BAD + TEAM.BULLET;
@@ -2871,20 +2900,20 @@ class BulletHell extends Enemy{
                     this.goal.x = 0;
                     this.goal.y = 0;
                 }else if(this.phase == 2) {
-                    this.goal.x = game.w - this.s;
+                    this.goal.x = game.w - this.s * 2;
                     this.goal.y = 0;
                 }else if(this.phase == 3) {
-                    this.goal.x = game.w - this.s;
-                    this.goal.y = game.h - this.s;
+                    this.goal.x = game.w - this.s * 2;
+                    this.goal.y = game.h - this.s * 2;
                 }else if(this.phase == 4) {
                     this.goal.x = 0;
-                    this.goal.y = game.h - this.s;
+                    this.goal.y = game.h - this.s * 2;
                 }else if(this.phase == 5) {
                     this.goal.x = 0;
                     this.goal.y = 0;
                 }else if(this.phase == 6) {
-                    this.goal.x = (game.w - this.s) * .3;
-                    this.goal.y = (game.h - this.s) * .3;
+                    this.goal.x = (game.w - this.s * 2) * .3;
+                    this.goal.y = (game.h - this.s * 2) * .3;
                 }
                 this.moveTo(this.goal);
                 if(++this.time % 5 == 0) {
@@ -3008,7 +3037,7 @@ class BulletHell extends Enemy{
     shape2 = shapes.get("square-ring");
     phase = 0;
     time = 0;
-    coll = 0;
+    coll = TEAM.BAD;
     nocoll = TEAM.BULLET;
     hp = 15;
     xHp = 15;
@@ -3024,6 +3053,10 @@ class Player extends Entity{
         super();
         this.id = id;
         this.spawn();
+        if(multi) {
+            this.hue = (id/(multi + 1)) * 360;
+            this.safe = 360/((multi + 1) * 4);
+        }
     }
     spawn() {
         this.x = (game.w - this.s)/2;
@@ -3152,17 +3185,41 @@ class Player extends Entity{
             this.ability(this.ab, dis? rad: dis, atan(y, x));
         }else this.ab = 0;
     }
+    update() {
+        super.update();
+        if(this.dead >= DEAD) {
+            this.team = 0;
+            this.hits = 0;
+            this.coll = 0;
+            for(let main of mains) {
+                if(!main.dead && Entity.isTouching(main, this)) {
+                    this.revive();
+                }
+            }
+        }
+    }
+    revive() {
+        this.hp = this.xHp;
+        this.dead = 0;
+        this.team = TEAM.GOOD;
+        this.hits = TEAM.BAD;
+        this.coll = TEAM.BAD + TEAM.GOOD;
+    }
+    get alpha() {
+        if(this.dead >= DEAD) return multi? 0.4: 0;
+        else return super.alpha;
+    }
     onXp() {}
     nextLevel() {}
     explode() {
-        var a = this.xp/10;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            blob.spd = random()/15;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
+        // var a = this.xp/10;
+        // var o = random(PI);
+        // for(let i = 0; i < a; i++) {
+        //     var blob = new Xp;
+        //     blob.spd = random()/15;
+        //     Xp.position(blob, i * PI2/a + o, this);
+        //     exp.push(blob);
+        // }
     }
     xp = 0;
     r = 0;
@@ -3171,7 +3228,7 @@ class Player extends Entity{
         var mx = 0;
         var my = 0;
         // var multi = mains[1];
-        if(this.id == 0) {
+        if(this.id == gamepads.length) {
             if(keys.has("KeyW")) --my;
             if(keys.has("KeyS")) ++my;
             if(keys.has("KeyA")) --mx;
@@ -3225,7 +3282,7 @@ class Player extends Entity{
     shape = shapes.get("square.4");
     team = TEAM.GOOD;
     hits = TEAM.BAD;
-    coll = TEAM.BAD;
+    coll = TEAM.BAD + TEAM.GOOD;
 }
 class TheGunner extends Player{
     desc = [
@@ -3242,15 +3299,21 @@ class TheGunner extends Player{
     shape = shapes.get("square.4");
     color2 = "#aaf";
     shape2 = shapes.get("square.4");
-    ccolor = "#faa";
     constructor(id) {
         super(id);
-        if(id == 1) {
-            this.color = "#5ff";
-            this.color2 = "#aff"; 
-            this.ccolor = "#faf";
+        if(multi) {
+            var {hue, safe} = this;
+            hue += safe * .5;
+            this.color = `hsl(${hue}, 100%, 50%)`;
+            this.color2 = `hsl(${hue}, 100%, 80%)`;
         }
+        this.ccolor = this.color;
         this.ncolor = this.color2;
+        // if(id == 1) {
+        //     this.color = "#5ff";
+        //     this.color2 = "#aff"; 
+        //     this.ccolor = "#faf";
+        // }
     }
     get alpha() {
         if(this.lastSkill > 40) return .4;
@@ -3266,19 +3329,19 @@ class TheGunner extends Player{
         }else if(this.lastSkill) {
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.coll = TEAM.BAD + TEAM.GOOD;
         }else{
             this.color2 = this.ncolor;
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.coll = TEAM.BAD + TEAM.GOOD;
         }
     }
     skill(rad) {
         if(!this.lastShot) {
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.coll = TEAM.BAD + TEAM.GOOD;
             enemies.push(new Bullet(this, rad));
             this.lastShot = 10;
             sounds.Shoot.play();
@@ -3312,12 +3375,20 @@ class TheDasher extends Player{
     ]
     shape2 = shapes.get("arrow-box");
     color = "#f70";
-    hue = 28;
     color2 = "#fff";
     color3 = "#f70";
     constructor(id) {
         super(id);
         if(id == 1) this.color = "#ff0";
+        if(multi) {
+            var {hue, safe} = this;
+            // hue -= safe;
+            this.color = `hsl(${hue}, 100%, 50%)`;
+            // this.color2 = `hsl(${hue}, 100%, 80%)`;
+            this.hue = hue;
+        }else{
+            this.hue = 28;
+        }
         this.icolor = this.color;
     }
     // atk = 2;
@@ -3695,11 +3766,20 @@ class TheSummoner extends SummonerClass{
         this.ncolor2 = "#425";
         this.ccolor = "#f82";
         this.ccolor2 = "#532";
-        if(id == 1) {
-            this.ncolor = "#42f"
-            this.ncolor2 = "#225";
-            this.ccolor = "#ff2";
-            this.ccolor2 = "#552";
+        // if(id == 1) {
+        //     this.ncolor = "#42f"
+        //     this.ncolor2 = "#225";
+        //     this.ccolor = "#ff2";
+        //     this.ccolor2 = "#552";
+        // }
+        if(multi) {
+            var {hue, safe} = this;
+            hue -= safe;
+            this.ccolor = `hsl(${hue}, 100%, 70%)`;
+            this.ccolor2 = `hsl(${hue}, 100%, 90%)`
+            hue += safe * 2;
+            this.ncolor = `hsl(${hue}, 100%, 40%)`;
+            this.ncolor2 = `hsl(${hue}, 100%, 20%)`
         }
         this.color = this.ncolor;
         this.color2 = this.ccolor;
@@ -3774,9 +3854,15 @@ class TheMagician extends SummonerClass{
     shape2 = shapes.get("tophat");
     constructor(id) {
         super(id);
-        if(id == 1) {
-            this.color = "#5ff";
-            this.color2 = "#cff";
+        // if(id == 1) {
+        //     this.color = "#5ff";
+        //     this.color2 = "#cff";
+        // }
+        if(multi) {
+            var {hue, safe} = this;
+            // hue += safe;
+            this.color = `hsl(${hue}, 100%, 60%)`;
+            this.color2 = `hsl(${hue}, 100%, 80%)`;
         }
         this.spd *= 1.2;
     }
@@ -3874,9 +3960,17 @@ class TheReformed extends TheGunner{
     icolor = "#ff0";
     constructor(id) {
         super(id);
-        if(id == 1) {
-            this.color = "#fad";
-            this.color2 = "#a5f";
+        // if(id == 1) {
+        //     this.color = "#fad";
+        //     this.color2 = "#a5f";
+        // }
+        if(multi) {
+            var {hue, safe} = this;
+            hue += safe * .5;
+            this.color = `hsl(${hue}, 100%, 70%)`;
+            hue -= safe * 1.5;
+            this.color2 = `hsl(${hue}, 100%, 40%)`;
+            // this.color2 = `hsl(${hue}, 100%, 80%)`;
         }
         this.spd *= 1.5;
     }
@@ -3984,10 +4078,14 @@ class TheLucky extends TheGunner{
     color2 = "#ffa";
     constructor(id) {
         super(id);
-        if(id == 1) {
-            this.color = "#7f7";
-            this.color2 = "#cfc";
+        if(multi) {
+            var {hue, safe} = this;
+            hue -= safe * .5;
+            this.color = `hsl(${hue}, 100%, 70%)`;
+            this.color2 = `hsl(${hue}, 100%, 80%)`;
         }
+        this.ccolor = this.color;
+        this.ncolor = this.color2;
         // this.spd *= 4;
         // this.friction *= .7;
     }
@@ -4016,7 +4114,13 @@ class TheLucky extends TheGunner{
             this.team = 0;
             this.hits = 0;
             this.coll = 0;
+            this.color2 = this.ccolor;
+        }else if(this.lastSkill) {
+            this.team = TEAM.GOOD;
+            this.hits = TEAM.BAD;
+            this.coll = TEAM.BAD;
         }else{
+            this.color2 = this.ncolor;
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
             this.coll = TEAM.BAD;
@@ -4037,6 +4141,7 @@ class TheLucky extends TheGunner{
             this.lastSkill = 40;
         }
     }
+    // shape2 = shapes.get("big-pointer");
 }
 class Droid extends Turret{
     range = 12;
@@ -4288,36 +4393,17 @@ class TheMaster extends SummonerClass{
         "#fff"
     ];
     summonSound = sounds.BotSummon;
-    // attacked(obj) {
-    //     if(this.shield) {
-    //         this.shield = false;
-    //         this.noHit = 10;
-    //         this.color2 = "#0000";
-
-    //         var u = PI2/8;
-    //         for(let i = 0; i < PI2; i += u) {
-    //             var blob = new Bullet(this, i);
-    //             blob.coll = 0;
-    //             blob.time = 30;
-    //             blob.spd /= 2;
-                
-    //             enemies.push(blob);
-    //         }
-    //         sounds.Explode.play();
-    //     }else if(!this.noHit) {
-    //         super.attacked(obj);
-    //     }
-    // }
-    // noHit = 10;
     ro = PI * .5;
     summons = [Droid, Bot, Roller];
     color = "#fff";
     color2 = "#aaa";
     constructor(id) {
         super(id);
-        if(id == 1) {
-            this.color = "#999";
-            this.color2 = "#555";
+        if(multi) {
+            var {hue, safe} = this;
+            // hue -= safe * .5;
+            this.color = `hsl(${hue}, 100%, 85%)`;
+            this.color2 = `hsl(${hue}, 50%, 70%)`;
         }
         this.icolor = this.color2;
     }
@@ -4351,6 +4437,13 @@ class TheHell extends TheGunner{
         super(id);
         this.nspd = this.spd;
         this.spd = 0;
+        if(multi) {
+            var {hue, safe} = this;
+            hue -= safe;
+            this.color = `hsl(${hue}, 100%, 65%)`;
+            hue += safe * 2;
+            this.color2 = `hsl(${hue}, 100%, 50%)`;
+        }
         this.ncolor = this.color2;
     }
     go(rad, dis) {
@@ -4583,9 +4676,7 @@ onload = () => {
 {
     let menu = 0;
     let players = [];
-    let players2 = [];
-    let plasel = 0;
-    let pl2sel = 0;
+    let plasel = [];
     let selLvl = 0;
     let lvlMax = 0;
     let menus = 2;
@@ -4594,7 +4685,7 @@ onload = () => {
     let lastButton = new Button;
     let startButton = new Button;
     let swapButton = new Button;
-    let multi = false;
+    var multi = 0;
     /**@param {Button} button*/
     function buttonClick(button) {
         for(let touch of touches.all) {
@@ -4604,6 +4695,37 @@ onload = () => {
             }
         }
     }
+    let padTrackers = [];
+    let PadTracker = class PadTracker{
+        constructor(id) {
+            this.id = id;
+        }
+        button = new Map;
+        update() {
+            var pads = navigator.getGamepads?.();
+            var pad = pads?.[gamepads[this.id]];
+            if(!pad) return;
+
+            for(let i in pad.buttons) {
+                let button = pad.buttons[i];
+                if(button.value) {
+                    if(this.button.has(i)) {
+                        this.button.set(i, 3);
+                    }else{
+                        this.button.set(i, 1);
+                    }
+                }else if(this.button.has(i)) {
+                    this.button.delete(i);
+                    // console.log(typeof i);
+                }
+            }
+        }
+        use(button) {
+            if(this.button.get(button) == 1) {
+                return this.button.set(button, 2);
+            }
+        }
+    };
     function mainMenu() {
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, game.width, game.height);
@@ -4617,52 +4739,34 @@ onload = () => {
         //     ctx.fillRect(x, y, s, s);
         // }
         var swap = false;
-        for(let blob of players) {
-            var s = h/scale;
-            var x = (game.w - s)/2 + s * (i - plasel) * 1.5;
-            var y = game.h/50;
-            if(i != plasel) {
-                swapButton.resize(x * scale, y * scale, s * scale, s * scale);
-                swapButton.draw("purple");
-                if(buttonClick(swapButton)) {
-                    swap = i;
+        for(let n = 0; n <= multi; n++) {
+            let i = 0;
+            for(let blob of players[n]) {
+                var s = h/scale;
+                var x = (game.w - s)/2 + s * (i - plasel[n]) * 1.5;
+                var y = game.h/50;
+                y += s * 1.3 * n;
+                if(i != plasel[n]) {
+                    swapButton.resize(x * scale, y * scale, s * scale, s * scale);
+                    swapButton.draw("purple");
+                    if(buttonClick(swapButton)) {
+                        swap = i;
+                    }
+                    x += .25 * s;
+                    y += .25 * s;
+                    s *= .5;
+                }else{
+                    startButton.resize(x * scale, y * scale, s * scale, s * scale);
+                    startButton.draw("blue");
                 }
-                x += .25 * s;
-                y += .25 * s;
-                s *= .5;
-            }else{
-                startButton.resize(x * scale, y * scale, s * scale, s * scale);
-                startButton.draw("blue");
+                blob.drawWith({x, y, s});
+                i += 1;
             }
-            blob.drawWith({x, y, s});
-            i += 1;
-        }
-        var i = 0;
-        if(multi) for(let blob of players2) {
-            var s = h/scale;
-            var x = (game.w - s)/2 + s * (i - pl2sel) * 1.5;
-            var y = game.h/50;
-            y += s * 1.3;
-            if(i != pl2sel) {
-                // swapButton.resize(x * scale, y * scale, s * scale, s * scale);
-                // swapButton.draw("purple");
-                // if(buttonClick(swapButton)) {
-                //     swap = i;
-                // }
-                x += .25 * s;
-                y += .25 * s;
-                s *= .5;
-            }else{
-                // startButton.resize(x * scale, y * scale, s * scale, s * scale);
-                // startButton.draw("blue");
-            }
-            blob.drawWith({x, y, s});
-            i += 1;
         }
         if(swap !== false) plasel = swap;
         s = h/scale;
         var y = game.h/50;
-        if(multi) y += s * 1.3;
+        if(multi) y += s * 1.3 * multi;
         var text = levelName(selLvl + 1);
         ctx.font = `${h}px Arial`;
         var {width} = ctx.measureText(text);
@@ -4677,8 +4781,8 @@ onload = () => {
         s *= scale;
         y += s/5;
         x -= s/5;
-        {
-            var b = 1 + multi;
+        {// Level arrows
+            var b = 1;
             if(selLvl > 0) {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
@@ -4705,8 +4809,8 @@ onload = () => {
             nextButton.resize(x, y, s, s);
             nextButton.draw("green");
         }
-        if(!multi) {
-            let main = players[plasel];
+        if(!multi) {// Draw text
+            let main = players[0][plasel[0]];
             let desc = main.desc;
             let cols = main.cols;
             by += h * 1.5;
@@ -4730,51 +4834,61 @@ onload = () => {
             else lvlMax = saveData.level;
         }
         if(keys.multi("ArrowRight")) {
-            if(multi) {
-                if(menu == 0) ++plasel;
-                if(menu == 1) ++pl2sel;
-                if(menu == 2) ++selLvl;
-            }else{
-                if(menu == 0) ++plasel;
-                if(menu == 1) ++selLvl;
+            if(menu == 0) {
+                if(gamepads.length in plasel) {
+                    ++plasel[gamepads.length];
+                }else ++selLvl;
             }
+            if(menu == 1) ++selLvl;
         }
         if(keys.multi("ArrowLeft")) {
-            if(multi) {
-                if(menu == 0) --plasel;
-                if(menu == 1) --pl2sel;
-                if(menu == 2) --selLvl;
-            }else{
-                if(menu == 0) --plasel;
-                if(menu == 1) --selLvl;
+            if(menu == 0) {
+                if(gamepads.length in plasel) {
+                    --plasel[gamepads.length];
+                }else --selLvl;
             }
+            if(menu == 1) --selLvl;
         }
         if(keys.use("ShiftRight")) {
-            multi = !multi;
+            ++multi;
+            mainMenu.load();
         }
-        if(gamepads.length < 2) {
-            multi = false;
+        if(multi > gamepads.length) {
+            multi = 0;
+            mainMenu.load();
+        }
+        while(padTrackers.length < gamepads.length) {
+            padTrackers.push(new PadTracker(padTrackers.length));
+        }
+        for(let pad of padTrackers) {
+            pad.update();
+            if(pad.use("15")) {//Right D-Pad
+                ++plasel[pad.id];
+            }
+            if(pad.use("14")) {//Left  D-Pad
+                --plasel[pad.id];
+            }
         }
         if(buttonClick(nextButton)) ++selLvl;
         if(buttonClick(lastButton)) --selLvl;
         if(keys.use("ArrowUp")) --menu;
         if(keys.use("ArrowDown")) ++menu;
-        plasel += players.length;
-        plasel %= players.length;
-        pl2sel += players.length;
-        pl2sel %= players.length;
+        for(let i in plasel) {
+            plasel[i] += players[0].length;
+            plasel[i] %= players[0].length;
+        }
         if(!lvlMax) {
             lvlMax = 0;
         }
         // selLvl += lvlMax + 1;
         if(selLvl == -2) selLvl = lvlMax;
         selLvl %= lvlMax + 1;
-        if(multi) menus = 3;
-        else menus = 2;
+        // if(multi) menus = 3;
+        // else menus = 2;
         // selLvl = 15;
         menu += menus;
         menu %= menus;
-        if(keys.use("Enter") || buttonClick(startButton)) {
+        if(keys.use("Enter") || buttonClick(startButton) || (padTrackers[0]?.use("0"))) {
             mainMenu.active = false;
             level = selLvl + 1;
             restart();
@@ -4790,7 +4904,7 @@ onload = () => {
         }
         if(keys.use("Escape") && (keys.has("ControlLeft"))) {
             keys.clear();
-            if(alert("Are you sure you want to reset?")) {
+            if(confirm("Are you sure you want to reset?")) {
                 saveData.level = 0;
                 saveData.levelE = 0;
                 saveData.save();
@@ -4800,10 +4914,15 @@ onload = () => {
     mainMenu.spawn = () => {
         mainMenu.load();
         mainMenu.active = false;
-        main = players[plasel];
-        mains = [main];
-        if(multi) {
-            mains.push(players2[pl2sel]);
+        // main = players[plasel];
+        // mains = [main];
+        // if(multi) {
+        //     mains.push(players2[pl2sel]);
+        // }
+        main = players[0][plasel[0]];
+        mains = [];
+        for(let n = 0; n <= multi; n++) {
+            mains.push(players[n][plasel[n]]);
         }
         exp = [];
     }
@@ -4811,45 +4930,43 @@ onload = () => {
         mainMenu.active = true;
         if(expert) lvlMax = saveData.levelE;
         else lvlMax = saveData.level;
-        players = [new TheGunner];
-        players2 = [new TheGunner(1)];
-        if(saveData.level >= 5) {
-            players.push(new TheDasher);
-            players2.push(new TheDasher(1));
-        }
-        if(saveData.level >= 10) {
-            players.push(new TheSummoner);
-            players2.push(new TheSummoner(1));
-        }
-        if(saveData.levelE >= 10) {
-            players.push(new TheMagician);
-            players2.push(new TheMagician(1));
-        }
-        if(saveData.level >= 15) {
-            players.push(new TheReformed);
-            players2.push(new TheReformed(1));
-        }
-        if(saveData.level >= 20) {
-            players.push(new TheLucky);
-            players2.push(new TheLucky(1));
-        }
-        if(saveData.levelE >= 20) {
-            players.push(new TheMaster);
-            players2.push(new TheMaster(1));
-        }
-        if(saveData.level >= 25) {
-            players.push(new TheHell);
-            players2.push(new TheHell(1));
+        players = [];
+        for(let i = 0; i <= multi; i++) {
+            let arr = [new TheGunner(i)];
+            if(saveData.level >= 5) {
+                arr.push(new TheDasher(i));
+            }
+            if(saveData.level >= 10) {
+                arr.push(new TheSummoner(i));
+            }
+            if(saveData.levelE >= 10) {
+                arr.push(new TheMagician(i));
+            }
+            if(saveData.level >= 15) {
+                arr.push(new TheReformed(i));
+            }
+            if(saveData.level >= 20) {
+                arr.push(new TheLucky(i));
+            }
+            if(saveData.levelE >= 20) {
+                arr.push(new TheMaster(i));
+            }
+            if(saveData.level >= 25) {
+                arr.push(new TheHell(i));
+            }
+            if(!plasel[i]) plasel[i] = 0;
+            players.push(arr);
         }
     };
 }
 
 var level, expert, score;
 function restart() {
+    onresize();
     score = 0;
     mainMenu.spawn();
-    enemies = [mains[0]];
-    if(mains[1]) enemies.push(mains[1]);
+    // console.log(mains);
+    enemies = mains;
     if(!exp) exp = [];
     if(level) level -= 1;
     else level = 0;
@@ -4863,7 +4980,10 @@ onresize = () => {
     game.width = innerWidth;
     game.height = innerHeight;
 
-    scale = round(sf * (game.width * game.height) ** .5);
+    var mult = multi + 1;
+    mult **= .75;
+
+    scale = round(sf * (game.width * game.height/mult) ** .5);
 
     game.w = game.width/scale;
     game.h = game.height/scale;
@@ -5016,7 +5136,7 @@ function levelName(level) {
                     }
                 }
             }
-            if(TIME++ % 2 == 0) {
+            if(TIME++ % 50 == 0) {
                 background.shadow();
             }
             var txt = levelName(level);
@@ -5063,7 +5183,7 @@ function levelName(level) {
 
             let a = [];
             enemies = enemies.filter(blob => {
-                if(blob.dead < DEAD) return true;
+                if(blob.dead < DEAD || (blob instanceof Player)) return true;
                 else a.push(blob);
             });
             a.forEach(blob => blob.explode());
@@ -5112,34 +5232,18 @@ function levelName(level) {
             if(!allDead && (Survival? timeLeft <= 0: arr.length == 0)) {
                 TIME = 0;
                 if(!Survival) {
-                    enemies = [main];
-                    main.nextLevel();
-                }
-                if(main.dead) {
-                    main.x = mains[1].x;
-                    main.y = mains[1].y;
-                }
-                main.hp = main.xHp;
-                main.dead = 0;
-                if(mains[1]) {
-                    if(!Survival) {
-                        enemies.push(mains[1]);
-                        mains[1].nextLevel();
+                    // enemies = [main];
+                    for(let main of mains) {
+                        main.nextLevel();
                     }
-                    if(mains[1].dead) {
-                        mains[1].x = main.x;
-                        mains[1].y = main.y;
-                    }
-                    mains[1].hp = mains[1].xHp;
-                    mains[1].dead = 0;
-                    // if(!Survival) {
-                    //     mains[1].spawn();
-                    // }
                 }
                 // if(!Survival) {
                 //     main.spawn();
                 // }
-                nextLevel();
+                for(let n = 0; n <= multi; n++) {
+                    nextLevel();
+                    if(n < multi) --level;
+                }
             }
             }catch(err) {
                 console.error(err);
