@@ -4456,6 +4456,18 @@ class TheHell extends TheGunner{
             this.color2 = this.ncolor;
         }
     }
+    desc = [
+        "Rocketship?",
+        "Go zoom with a burst of 4 bullets",
+        "Skill: Burst shot",
+        "Ability: Explode"
+    ];
+    cols = [
+        "#f0f",
+        "#f0f",
+        "#ffa",
+        "#ffa"
+    ];
     skill(r) {
         var a = .5;
         var rad = r;
