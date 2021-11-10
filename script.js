@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//NOCOLL
+//FINAL
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
@@ -3309,6 +3309,8 @@ class TheGunner extends Player{
         }
         this.ccolor = this.color;
         this.ncolor = this.color2;
+        this.nteam = this.team;
+        this.nopp = this.hits;
         // if(id == 1) {
         //     this.color = "#5ff";
         //     this.color2 = "#aff"; 
@@ -3327,21 +3329,21 @@ class TheGunner extends Player{
             this.coll = 0;
             this.color2 = this.ccolor;
         }else if(this.lastSkill) {
-            this.team = TEAM.GOOD;
-            this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.team = this.nteam;
+            this.hits = this.nopp;
+            this.coll = this.nopp;
         }else{
             this.color2 = this.ncolor;
-            this.team = TEAM.GOOD;
-            this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.team = this.nteam;
+            this.hits = this.nopp;
+            this.coll = this.nopp;
         }
     }
     skill(rad) {
         if(!this.lastShot) {
-            this.team = TEAM.GOOD;
-            this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.team = this.nteam;
+            this.hits = this.nopp;
+            this.coll = this.nopp;
             enemies.push(new Bullet(this, rad));
             this.lastShot = 10;
             sounds.Shoot.play();
@@ -3406,7 +3408,8 @@ class TheDasher extends Player{
             what.color3 = this.color3;
             what.atk = 0.5;
         }else if(what.hp <= 0 && this.god) {
-            what.team = this.team + TEAM.BAD;
+            what.team = this.team;
+            what.important = true;
             what.hits = this.hits;
             what.coll = this.coll;
             what.color = this.color;
@@ -3418,12 +3421,15 @@ class TheDasher extends Player{
             what.god = true;
             
             what.explode = () => {
-                var a = what.xp;
-                var o = random(PI);
-                for(let i = 0; i < a; i++) {
-                    var blob = new Xp;
-                    Xp.position(blob, i * PI2/a + o, what);
-                    enemies.push(blob);
+                // var a = what.xp;
+                // var o = random(PI);
+                // for(let i = 0; i < a; i++) {
+                //     var blob = new Xp;
+                //     Xp.position(blob, i * PI2/a + o, what);
+                //     enemies.push(blob);
+                // }
+                for(let main of mains) {
+                    main.onXp();
                 }
                 sounds.Explode.play();
                 var u = PI2/8;
@@ -3522,8 +3528,8 @@ class TheDasher extends Player{
             obj.coll = TEAM.BAD;
             for(let i = 0; i < PI2; i += u) {
                 var blob = new Bullet(this, i);
-                blob.coll = TEAM.BAD;
-                blob.hits = TEAM.BAD + TEAM.BULLET;
+                blob.coll = this.opp;
+                blob.hits = this.opp | TEAM.BULLET;
                 blob.hit = what => obj.hit(what);
                 blob.time = 1;
                 blob.spd /= 2;
@@ -3598,9 +3604,9 @@ class SummonerClass extends Player{
         summon.s = .75;
         summon.color = this.color;
         summon.color2 = this.color2;
-        summon.team = TEAM.GOOD;
-        summon.hits = TEAM.BAD;
-        summon.coll = TEAM.BAD + TEAM.GOOD;
+        summon.team = this.team;
+        summon.hits = this.hits;
+        summon.coll = this.hits | this.team;
         summon.hp = .5;
         summon.parent = this;
         return summon;
@@ -3783,6 +3789,7 @@ class TheSummoner extends SummonerClass{
         }
         this.color = this.ncolor;
         this.color2 = this.ccolor;
+        this.nteam = this.team;
     }
     onXp() {
         var pets = floor(this.p/5);
@@ -3810,18 +3817,18 @@ class TheSummoner extends SummonerClass{
             for(let blob of this.alive) {
                 blob.color = this.ncolor;
                 blob.color2 = this.ncolor2;
-                blob.team = TEAM.GOOD + TEAM.BULLET;
+                blob.team = this.nteam | TEAM.BULLET;
             }
             this.color = this.ccolor;
             this.color2 = this.ccolor2;
-            this.team = TEAM.GOOD;
+            this.team = this.nteam;
         }else{
             for(let blob of this.alive) {
                 blob.color = this.ccolor;
                 blob.color2 = this.ccolor2;
-                blob.team = TEAM.GOOD;
+                blob.team = this.nteam;
             }
-            this.team = TEAM.GOOD + TEAM.BULLET;
+            this.team = this.nteam | TEAM.BULLET;
             this.color = this.ncolor;
             this.color2 = this.ncolor2;
         }
@@ -3891,7 +3898,7 @@ class TheMagician extends SummonerClass{
     }
     summon() {
         var blob = super.summon();
-        blob.team += TEAM.BULLET;
+        blob.team = blob.team | TEAM.BULLET;
         blob.coll = this.coll;
         blob.hp = .1;
         return blob;
@@ -3982,10 +3989,10 @@ class TheReformed extends TheGunner{
             for(let i = -5; i <= 5; ++i) {
                 var rad = r + i * u;
                 var blob = new Bullet(this, rad);
-                blob.team = TEAM.BULLET + TEAM.GOOD;
+                blob.team = TEAM.BULLET | this.team;
                 blob.coll = TEAM.BULLET;
                 // blob.spd;
-                blob.nocoll = TEAM.GOOD;
+                blob.nocoll = this.team;
                 blob.m = 20;
                 blob.time = 10;
                 blob.atk = .25;
@@ -4088,12 +4095,14 @@ class TheLucky extends TheGunner{
         this.ncolor = this.color2;
         // this.spd *= 4;
         // this.friction *= .7;
+        this.nteam = this.team;
+        this.nopp = this.hits;
     }
     skill(rad) {
         if(!this.lastShot) {
-            this.team = TEAM.GOOD;
-            this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.team = this.nteam;
+            this.hits = this.nopp;
+            this.coll = this.nopp;
             rad += (srand() - .5) * PI * (this.mrad === false? .2: .5);
             var blob = new Bullet(this, rad);
             blob.time = 10;
@@ -4116,14 +4125,14 @@ class TheLucky extends TheGunner{
             this.coll = 0;
             this.color2 = this.ccolor;
         }else if(this.lastSkill) {
-            this.team = TEAM.GOOD;
-            this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.team = this.nteam;
+            this.hits = this.nopp;
+            this.coll = this.nopp;
         }else{
             this.color2 = this.ncolor;
-            this.team = TEAM.GOOD;
-            this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.team = this.nteam;
+            this.hits = this.nopp;
+            this.coll = this.nopp;
         }
     }
     get alpha() {
@@ -4175,9 +4184,9 @@ class Droid extends Turret{
             var blob = new Bullet(this, rad);
             // blob.team = TEAM.BULLET;
             // blob.coll = TEAM.BULLET;
-            blob.nocoll = TEAM.GOOD;
-            blob.hits += TEAM.BULLET;
-            blob.nohit = TEAM.GOOD;
+            blob.nocoll = this.team;
+            blob.hits = blob.hits | TEAM.BULLET;
+            blob.nohit = this.team;
             blob.spd *= 1.2;
             blob.time = 10;
             blob.atk = .5;
@@ -4445,6 +4454,8 @@ class TheHell extends TheGunner{
             this.color2 = `hsl(${hue}, 100%, 50%)`;
         }
         this.ncolor = this.color2;
+        this.nteam = this.team;
+        this.nopp = this.hits;
     }
     go(rad, dis) {
         this.skill(rad + PI);
@@ -4464,9 +4475,9 @@ class TheHell extends TheGunner{
         // var end = r + u * 5;
         if(!this.lastShot) {
             // --this.bullets;
-            this.team = TEAM.GOOD;
-            this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD;
+            this.team = this.nteam;
+            this.hits = this.nopp;
+            this.coll = this.nopp;
             var obj = new Bullet(this);
             obj.coll = TEAM.BAD;
 
@@ -4503,11 +4514,11 @@ class TheHell extends TheGunner{
         if(!this.lastShot) {
             var u = PI * .125;
             var obj = new Bullet(this);
-            obj.coll = TEAM.BAD;
+            obj.coll = this.nopp;
             for(let i = 0; i < PI2; i += u) {
                 var blob = new Bullet(this, i);
-                blob.coll = TEAM.BAD;
-                blob.hits = TEAM.BAD + TEAM.BULLET;
+                blob.coll = this.nopp;
+                blob.hits = this.nopp | TEAM.BULLET;
                 blob.hit = what => obj.hit(what);
                 blob.time = 10;
                 blob.spd /= 2;
@@ -4978,7 +4989,7 @@ function restart() {
     score = 0;
     mainMenu.spawn();
     // console.log(mains);
-    enemies = mains;
+    enemies = [...mains];
     if(!exp) exp = [];
     if(level) level -= 1;
     else level = 0;
@@ -5185,9 +5196,8 @@ function levelName(level) {
                 ctx.fillText(txt, 0, scale * 2);
 
                 if(level == 0) {
-                    main.nextLevel();
-                    if(mains[1]) {
-                        mains[1].nextLevel();
+                    for(let main of mains) {
+                        main.nextLevel();
                     }
                     timeLeft = 0;
                 }
@@ -5246,7 +5256,8 @@ function levelName(level) {
                 if(!Survival) {
                     // enemies = [main];
                     for(let main of mains) {
-                        main.nextLevel();
+                        if(typeof main.nextLevel == "function") main.nextLevel();
+                        else console.log(main);
                     }
                 }
                 // if(!Survival) {
