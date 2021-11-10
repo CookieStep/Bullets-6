@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//MULTI LESS GOO
+//ATKD
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
@@ -2182,17 +2182,17 @@ class Dasher extends Mover{
             break;
         }
     }
-    attacked(obj) {
-        super.attacked(obj);
+    // attacked(obj) {
+    //     super.attacked(obj);
 
-        var a = 5 * obj.atk;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
-    }
+    //     var a = 5 * obj.atk;
+    //     var o = random(PI);
+    //     for(let i = 0; i < a; i++) {
+    //         var blob = new Xp;
+    //         Xp.position(blob, i * PI2/a + o, this);
+    //         exp.push(blob);
+    //     }
+    // }
     shape = shapes.get("square.4");
     color = "#f00";
     shape2 = shapes.get("arrow-box");
@@ -2290,17 +2290,17 @@ class Squish extends Enemy{
     register(enemy) {
         this.registerPlayer(enemy);
     }
-    attacked(obj) {
-        super.attacked(obj);
+    // attacked(obj) {
+    //     super.attacked(obj);
 
-        var a = 10 * obj.atk;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
-    }
+    //     var a = 10 * obj.atk;
+    //     var o = random(PI);
+    //     for(let i = 0; i < a; i++) {
+    //         var blob = new Xp;
+    //         Xp.position(blob, i * PI2/a + o, this);
+    //         exp.push(blob);
+    //     }
+    // }
     tick() {
         var {player} = this;
         if(player && player.dead) delete this.player;
@@ -2488,18 +2488,18 @@ class Summoner extends Brain{
         super();
         if(expert) this.spd *= 1.5;
     }
-    attacked(obj) {
-        super.attacked(obj);
-        if(this.god) return;
+    // attacked(obj) {
+    //     super.attacked(obj);
+    //     if(this.god) return;
         
-        var a = 7 * obj.atk;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
-    }
+    //     var a = 7 * obj.atk;
+    //     var o = random(PI);
+    //     for(let i = 0; i < a; i++) {
+    //         var blob = new Xp;
+    //         Xp.position(blob, i * PI2/a + o, this);
+    //         exp.push(blob);
+    //     }
+    // }
     smartMove() {
         this.rad += (srand() - .5)/4;
         this.brainPoints.push([this.rad, this.wander]);
@@ -2884,18 +2884,18 @@ class Gobble extends Enemy{
 class BulletHell extends Enemy{
     static type = "MiniBoss";
     static name = "Spinner";
-    attacked(obj) {
-        super.attacked(obj);
-        if(this.god) return;
+    // attacked(obj) {
+    //     super.attacked(obj);
+    //     if(this.god) return;
         
-        var a = 5 * obj.atk;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
-    }
+    //     var a = 5 * obj.atk;
+    //     var o = random(PI);
+    //     for(let i = 0; i < a; i++) {
+    //         var blob = new Xp;
+    //         Xp.position(blob, i * PI2/a + o, this);
+    //         exp.push(blob);
+    //     }
+    // }
     constructor() {
         super();
         if(!expert) {
@@ -5173,7 +5173,6 @@ var Arena;
         "#0ff",
         "#70f"
     ];
-    let teamcol2 = teamcols;
     let Teams = [
         TEAM.RED,
         TEAM.GREEN,
