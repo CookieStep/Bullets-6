@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//FINAL
+//MULTI LESS GOO
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
@@ -388,7 +388,11 @@ var TEAM = {
     BULLET: a(2),
     ENEMY: a(4),
     BOSS: a(5),
-    ALLY: a(6)
+    ALLY: a(6),
+    RED: a(10),
+    GREEN: a(11),
+    BLUE: a(12),
+    PURPLE: a(13)
 };
 var DEAD = 10;
 {//Canvas Shapes
@@ -682,6 +686,7 @@ class Entity{
     friction = 0.8;
     get alpha() {
         if(this.dead) return 1 - this.dead/DEAD;
+        else if(this.teamColor && !(this instanceof Bullet)) return 1;
         return (this.hp/this.xHp) * .8 + .2;
     }
     draw() {
@@ -690,6 +695,38 @@ class Entity{
         this.draw1();
         this.draw2();
         this.draw3();
+        this.dteam();
+    }
+    dteam() {
+        if(this.teamColor) {
+            var {x, y, s, r, ro, alpha} = this;
+            x *= scale;
+            y *= scale;
+            s *= scale;
+
+            if(!r) r = 0;
+            if(!ro) ro = 0;
+
+            r += ro;
+
+            var hp = (this.hp/this.xHp);
+            if(hp <= 0) hp = 1;
+            if(this instanceof Bullet) hp = 1;
+
+            ctx.save();
+            ctx.zoom(x, y, s, s, r);
+            ctx.beginPath();
+            ctx.arc(.5, .5, 2, 0, PI2 * hp);
+            ctx.lineTo(.5, .5);
+            ctx.closePath();
+            ctx.clip();
+            ctx.lineWidth = 3/s;
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = this.teamColor;
+            ctx.stroke(this.shape);
+            ctx.resetTransform();
+            ctx.restore();
+        }
     }
     drawWith(obj) {
         obj = {...this, ...obj};
@@ -698,6 +735,7 @@ class Entity{
         this.draw1.call(obj);
         this.draw2.call(obj);
         this.draw3.call(obj);
+        this.dteam.call(obj);
     }
     draw1() {
         var {x, y, s, r, ro, alpha} = this;
@@ -1311,11 +1349,12 @@ class Bullet extends Mover{
         this.parent = parent;
         Bullet.position(this, rad);
         this.time = 25;
-        this.team = parent.team + TEAM.BULLET;
+        this.team = parent.team | TEAM.BULLET;
         this.hits = parent.hits;
         this.color = parent.color;
         this.color2 = parent.color2;
-        this.coll = parent.coll + TEAM.BULLET;
+        this.coll = parent.coll | TEAM.BULLET;
+        this.teamColor = parent.teamColor;
     }
     xHp = .5;
     hp = .5;
@@ -3057,10 +3096,27 @@ class Player extends Entity{
             this.hue = (id/(multi + 1)) * 360;
             this.safe = 360/((multi + 1) * 4);
         }
+        this.nteam = this.team;
     }
     spawn() {
         this.x = (game.w - this.s)/2;
         this.y = (game.h - this.s)/2;
+    }
+    arenaSpawn() {
+        var d = 10;
+        var I = this;
+        do{
+            this.x = random(game.w - this.s);
+            this.y = random(game.h - this.s);
+        }while(close());
+        function close() {
+            for(let blob of enemies) {
+                if(blob instanceof Player && blob.team != I.team && Entity.distance(blob, I) < d) {
+                    return true;
+                }
+            }
+        }
+        return this;
     }
     go(rad, dis) {
         this.move(rad, dis);
@@ -3187,12 +3243,13 @@ class Player extends Entity{
     }
     update() {
         super.update();
-        if(this.dead >= DEAD) {
+        if(this.dead == DEAD) this.explode();
+        else if(this.dead >= DEAD) {
             this.team = 0;
             this.hits = 0;
             this.coll = 0;
             for(let main of mains) {
-                if(!main.dead && Entity.isTouching(main, this)) {
+                if(!main.dead && (main.team & this.nteam) && Entity.isTouching(main, this)) {
                     this.revive();
                 }
             }
@@ -3206,7 +3263,7 @@ class Player extends Entity{
         this.coll = TEAM.BAD;
     }
     get alpha() {
-        if(this.dead >= DEAD) return multi? 0.4: 0;
+        if(this.dead >= DEAD) return multi? 0.1: 0;
         else return super.alpha;
     }
     onXp() {}
@@ -3385,7 +3442,7 @@ class TheDasher extends Player{
         if(multi) {
             var {hue, safe} = this;
             // hue -= safe;
-            this.color = `hsl(${hue}, 100%, 50%)`;
+            this.color = `hsl(${hue}, 100%, 60%)`;
             // this.color2 = `hsl(${hue}, 100%, 80%)`;
             this.hue = hue;
         }else{
@@ -3399,7 +3456,71 @@ class TheDasher extends Player{
         // if(this.lastSkill) {
         //     this.hitd += 5;
         // }
-        if(this.god && what.team & TEAM.BULLET) {
+        if(this.god && what instanceof Player) {
+            if(what.hp <= 0) {
+                let oHit = what.hit;
+                let oExp = what.explode;
+                // let oRev = what.revive;
+
+                let oTem = what.team;
+                let oOpp = what.hits;
+                let oCol = what.coll;
+                let oClr = what.color;
+                let oCl2 = what.color2;
+                let oCl3 = what.color3;
+                let oMas = what.m;
+                let oTCo = what.teamColor;
+
+                what.team = this.team;
+                what.hits = this.hits;
+                what.coll = this.coll;
+                what.color = this.color;
+                what.color2 = this.color2;
+                what.color3 = this.color3;
+                what.teamColor = this.teamColor;
+
+                // what.dead = -10;
+                what.hit = this.hit;
+                what.m = this.m;
+                what.god = true;
+
+                what.explode = () => {
+                    for(let main of mains) {
+                        if(main.team & this.team) {
+                            main.onXp();
+                        }
+                    }
+                    sounds.Explode.play();
+                    var u = PI2/8;
+                    for(let i = 0; i < PI2; i += u) {
+                        var blob = new Bullet(what, i);
+                        blob.team = this.team | TEAM.BULLET;
+                        blob.hits = this.hits;
+                        blob.teamColor = this.teamColor;
+                        blob.coll = 0;
+                        blob.time = 10;
+                        blob.spd /= 4;
+                        enemies.push(blob);
+                    }
+                    what.team = oTem;
+                    what.hits = oOpp;
+                    what.coll = oCol;
+                    what.color = oClr;
+                    what.color2 = oCl2;
+                    what.color3 = oCl3;
+                    what.teamColor = oTCo;
+                    what.hit = oHit;
+                    what.m = oMas;
+                    what.god = false;
+                    what.explode = oExp;
+                }
+                // what.revive = () => {
+                //     what.revive = oRev;
+                //     what.explode = oExp;
+                //     what.revive();
+                // }
+            }
+        }else if(this.god && what.team & TEAM.BULLET) {
             what.team = this.team;
             what.hits = this.hits;
             what.coll = this.coll;
@@ -3407,6 +3528,7 @@ class TheDasher extends Player{
             what.color2 = this.color2;
             what.color3 = this.color3;
             what.atk = 0.5;
+            what.teamColor = this.teamColor;
         }else if(what.hp <= 0 && this.god) {
             what.team = this.team;
             what.important = true;
@@ -3415,6 +3537,7 @@ class TheDasher extends Player{
             what.color = this.color;
             what.color2 = this.color2;
             what.color3 = this.color3;
+            what.teamColor = this.teamColor;
             // what.dead = -10;
             what.hit = this.hit;
             what.m = this.m;
@@ -3429,14 +3552,17 @@ class TheDasher extends Player{
                 //     enemies.push(blob);
                 // }
                 for(let main of mains) {
-                    main.onXp();
+                    if(main.team & this.team) {
+                        main.onXp();
+                    }
                 }
                 sounds.Explode.play();
                 var u = PI2/8;
                 for(let i = 0; i < PI2; i += u) {
                     var blob = new Bullet(what, i);
-                    blob.team = TEAM.GOOD + TEAM.BULLET;
-                    blob.hits = TEAM.BAD;
+                    blob.team = this.team | TEAM.BULLET;
+                    blob.hits = this.hits;
+                    blob.teamColor = this.teamColor;
                     blob.coll = 0;
                     blob.time = 10;
                     blob.spd /= 4;
@@ -3604,6 +3730,7 @@ class SummonerClass extends Player{
         summon.s = .75;
         summon.color = this.color;
         summon.color2 = this.color2;
+        summon.teamColor = this.teamColor;
         summon.team = this.team;
         summon.hits = this.hits;
         summon.coll = this.hits | this.team;
@@ -4043,7 +4170,7 @@ class TheReformed extends TheGunner{
 
             ctx.lineWidth = 0.2;
             ctx.zoom(dx, dy, w, w, rad);
-            ctx.strokeStyle = this.reloading? "#f00": this.icolor;
+            ctx.strokeStyle = this.reloading? (Arena? "#550": "#f00"): (this.teamColor || this.icolor);
             ctx.stroke(this.ishape);
             ctx.resetTransform();
         }
@@ -4695,6 +4822,7 @@ onload = () => {
     }catch(err) {console.error(err); console.log(enemies)}
     update();
 };
+var Arena;
 //Main Menu Code
 {
     let menu = 0;
@@ -4709,6 +4837,7 @@ onload = () => {
     let startButton = new Button;
     let swapButton = new Button;
     var multi = 0;
+    let teams = [0, 1, 2, 3];
     /**@param {Button} button*/
     function buttonClick(button) {
         for(let touch of touches.all) {
@@ -4739,7 +4868,7 @@ onload = () => {
                     }
                 }else if(this.button.has(i)) {
                     this.button.delete(i);
-                    // console.log(typeof i);
+                    // console.log(i);
                 }
             }
         }
@@ -4872,6 +5001,23 @@ onload = () => {
             }
             if(menu == 1) --selLvl;
         }
+        let changeTeam;
+        if(keys.use("KeyD")) {
+            if(gamepads.length in teams) {
+                ++teams[gamepads.length];
+                changeTeam = true;
+            }
+        }
+        if(keys.use("KeyA")) {//Left Bumper
+            if(gamepads.length in teams) {
+                --teams[gamepads.length];
+                changeTeam = true;
+            }
+        }
+        if(gamepads.length in teams) {
+            teams[gamepads.length] += teams.length;
+            teams[gamepads.length] %= teams.length;
+        }
         if(keys.use("ShiftRight")) {
             ++multi;
             mainMenu.load();
@@ -4891,7 +5037,18 @@ onload = () => {
             if(pad.use("14")) {//Left  D-Pad
                 --plasel[pad.id];
             }
+            if(pad.use("5")) {//Right Bumper
+                ++teams[pad.id];
+                changeTeam = true;
+            }
+            if(pad.use("4")) {//Left Bumper
+                --teams[pad.id];
+                changeTeam = true;
+            }
+            teams[i] += teams.length;
+            teams[i] %= teams.length;
         }
+        if(changeTeam) mainMenu.load();
         if(buttonClick(nextButton)) ++selLvl;
         if(buttonClick(lastButton)) --selLvl;
         if(keys.use("ArrowUp")) --menu;
@@ -4904,13 +5061,21 @@ onload = () => {
             lvlMax = 0;
         }
         // selLvl += lvlMax + 1;
-        if(selLvl == -2) selLvl = lvlMax;
+        if(selLvl == -2 && !multi) selLvl = lvlMax;
+        if(selLvl == -3) selLvl = lvlMax;
         selLvl %= lvlMax + 1;
         // if(multi) menus = 3;
         // else menus = 2;
         // selLvl = 15;
         menu += menus;
         menu %= menus;
+        if(Arena && selLvl != -2) {
+            Arena = false;
+            mainMenu.load();
+        }else if(!Arena && selLvl == -2) {
+            Arena = true;
+            mainMenu.load();
+        }
         if(keys.use("Enter") || buttonClick(startButton) || (padTrackers[0]?.use("0"))) {
             mainMenu.active = false;
             level = selLvl + 1;
@@ -4919,6 +5084,12 @@ onload = () => {
                 Survival = true;
             }else{
                 Survival = false;
+            }
+            if(selLvl == -2) {
+                Arena = true;
+                level = -1;
+            }else{
+                Arena = false;
             }
             if(mobile) canvas.requestFullscreen().catch(a => 0);
         }
@@ -4978,9 +5149,38 @@ onload = () => {
                 arr.push(new TheHell(i));
             }
             if(!plasel[i]) plasel[i] = 0;
+            if(Arena) {
+                let team = teams[i];
+                let teamCol = teamcols[team];
+                // let teamCl2 = teamcol2[team];
+
+                for(let main of arr) {
+                    main.teamColor = teamCol;
+                    // main.teamColor2 = teamCl2;
+                    main.team = Teams[team];
+                    main.hits = ALLTEAMS - Teams[team];
+                    main.coll = ALLTEAMS - Teams[team];
+                    main.nteam = Teams[team];
+                    main.nopp = ALLTEAMS - Teams[team];
+                }
+            }
             players.push(arr);
         }
     };
+    let teamcols = [
+        "#f00",
+        "#7f0",
+        "#0ff",
+        "#70f"
+    ];
+    let teamcol2 = teamcols;
+    let Teams = [
+        TEAM.RED,
+        TEAM.GREEN,
+        TEAM.BLUE,
+        TEAM.PURPLE
+    ];
+    let ALLTEAMS = TEAM.RED + TEAM.GREEN + TEAM.BLUE + TEAM.PURPLE;
 }
 
 var level, expert, score;
@@ -4995,6 +5195,14 @@ function restart() {
     else level = 0;
     if(Survival) {
         level = 0;
+    }
+    if(Arena) {
+        for(let main of mains) {
+            main.arenaSpawn();
+            main.xHp = 5;
+            main.hp  = 5;
+            bosses.add(main);
+        }
     }
     background.recolor();
     background.draw();
@@ -5077,6 +5285,11 @@ function levelName(level) {
         if(expert) txt += " EX";
         return txt;
     }
+    if(level == -1) {
+        var txt = "Arena";
+        if(expert) txt += " (No Powerups)";
+        return txt;
+    }
     return txt;
 }
 {
@@ -5097,32 +5310,63 @@ function levelName(level) {
             ctx.drawImage(background.canvas, 0, 0);
             ctx.drawImage(background.overlay, 0, 0);
             var i = 0;
-            bosses.forEach(blob => {
-                var l = 5;
-                var w = game.width * 5/8;
-                var x = (game.width - w)/2;
-                var h = scale;
-                var y = game.height - (i * 1.5 + 1) * h - l/2;
-                ctx.strokeStyle = blob.color;
-                ctx.fillStyle = blob.color2 || blob.color;
-                ctx.lineWidth = l;
-                var hp = blob.hp;
-                if(hp < 0) hp = 0;
-                ctx.fillRect(x, y, w * (hp/blob.xHp), h);
-                if(blob.hp2) {
-                    var hp = blob.hp2;
+            if(Arena) {
+                var len = bosses.size;
+                bosses.forEach(blob => {
+                    var l = 5;
+                    var w = (game.width * 6/8)/len;
+                    var x = (game.width - w * len * 1.2)/2;
+                    x += w * i * 1.2;
+                    var h = scale;
+                    var y = game.height - 1.2 * h - l/2;
+                    ctx.strokeStyle = blob.teamColor;
+                    ctx.fillStyle = blob.color2 || blob.color;
+                    ctx.lineWidth = l;
+                    var hp = blob.hp;
                     if(hp < 0) hp = 0;
-                    ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
                     ctx.fillRect(x, y, w * (hp/blob.xHp), h);
-                }
-                ctx.strokeRect(x, y, w, h);
-                var s = 1 + 5/scale;
-                blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
-                if(!enemies.includes(blob)) {
-                    bosses.delete(blob);
-                }
-                ++i;
-            });
+                    if(blob.hp2) {
+                        var hp = blob.hp2;
+                        if(hp < 0) hp = 0;
+                        ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
+                        ctx.fillRect(x, y, w * (hp/blob.xHp), h);
+                    }
+                    ctx.strokeRect(x, y, w, h);
+                    var s = 1 + 5/scale;
+                    blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
+                    if(!enemies.includes(blob)) {
+                        bosses.delete(blob);
+                    }
+                    ++i;
+                });
+            }else{
+                bosses.forEach(blob => {
+                    var l = 5;
+                    var w = game.width * 5/8;
+                    var x = (game.width - w)/2;
+                    var h = scale;
+                    var y = game.height - (i * 1.5 + 1) * h - l/2;
+                    ctx.strokeStyle = blob.color;
+                    ctx.fillStyle = blob.color2 || blob.color;
+                    ctx.lineWidth = l;
+                    var hp = blob.hp;
+                    if(hp < 0) hp = 0;
+                    ctx.fillRect(x, y, w * (hp/blob.xHp), h);
+                    if(blob.hp2) {
+                        var hp = blob.hp2;
+                        if(hp < 0) hp = 0;
+                        ctx.fillStyle = blob.color3 || blob.color2 || blob.color;
+                        ctx.fillRect(x, y, w * (hp/blob.xHp), h);
+                    }
+                    ctx.strokeRect(x, y, w, h);
+                    var s = 1 + 5/scale;
+                    blob.drawWith({x: x/scale - .5, y: y/scale - (s - 1)/2, s, r: 0, alpha: 1});
+                    if(!enemies.includes(blob)) {
+                        bosses.delete(blob);
+                    }
+                    ++i;
+                });
+            }
             var nxp = [];
             for(let xp of exp) {
                 xp.update();
@@ -5227,7 +5471,7 @@ function levelName(level) {
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
                 Survival = false;
-            }else if((allDead && (keys.use("Enter") || A_button || X_button)) || buttonClick(restartButton) || Y_button) {
+            }else if((allDead && (buttonClick(restartButton) || keys.use("Enter") || A_button || X_button)) || Y_button) {
                 restart();
             }
 
@@ -5251,7 +5495,7 @@ function levelName(level) {
                 timeLeft = 0;
             }
             
-            if(!allDead && (Survival? timeLeft <= 0: arr.length == 0)) {
+            if(!Arena && !allDead && (Survival? timeLeft <= 0: arr.length == 0)) {
                 TIME = 0;
                 if(!Survival) {
                     // enemies = [main];
