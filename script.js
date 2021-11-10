@@ -1,7 +1,7 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//MACHI
+//NOCOLL
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
@@ -3203,7 +3203,7 @@ class Player extends Entity{
         this.dead = 0;
         this.team = TEAM.GOOD;
         this.hits = TEAM.BAD;
-        this.coll = TEAM.BAD + TEAM.GOOD;
+        this.coll = TEAM.BAD;
     }
     get alpha() {
         if(this.dead >= DEAD) return multi? 0.4: 0;
@@ -3282,7 +3282,7 @@ class Player extends Entity{
     shape = shapes.get("square.4");
     team = TEAM.GOOD;
     hits = TEAM.BAD;
-    coll = TEAM.BAD + TEAM.GOOD;
+    coll = TEAM.BAD;
 }
 class TheGunner extends Player{
     desc = [
@@ -3329,19 +3329,19 @@ class TheGunner extends Player{
         }else if(this.lastSkill) {
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD + TEAM.GOOD;
+            this.coll = TEAM.BAD;
         }else{
             this.color2 = this.ncolor;
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD + TEAM.GOOD;
+            this.coll = TEAM.BAD;
         }
     }
     skill(rad) {
         if(!this.lastShot) {
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD + TEAM.GOOD;
+            this.coll = TEAM.BAD;
             enemies.push(new Bullet(this, rad));
             this.lastShot = 10;
             sounds.Shoot.play();
@@ -4093,7 +4093,7 @@ class TheLucky extends TheGunner{
         if(!this.lastShot) {
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD + TEAM.GOOD;
+            this.coll = TEAM.BAD;
             rad += (srand() - .5) * PI * (this.mrad === false? .2: .5);
             var blob = new Bullet(this, rad);
             blob.time = 10;
@@ -4118,12 +4118,12 @@ class TheLucky extends TheGunner{
         }else if(this.lastSkill) {
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD + TEAM.GOOD;
+            this.coll = TEAM.BAD;
         }else{
             this.color2 = this.ncolor;
             this.team = TEAM.GOOD;
             this.hits = TEAM.BAD;
-            this.coll = TEAM.BAD + TEAM.GOOD;
+            this.coll = TEAM.BAD;
         }
     }
     get alpha() {
