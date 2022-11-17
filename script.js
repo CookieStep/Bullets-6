@@ -1,13 +1,13 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
-//ATKD
+//BLUE
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
 const env = {
     SOLOLEARN: Symbol()
 };
-const Enviroment = undefined;
+const Enviroment = env.SOLOLEARN;
 
 //https://www.beepbox.co/2_3/#6n31s6kbl00e0Btbm0a7g0Bjbi0r1o3210T0w0f2d1c0h0v2T0w3f1d1c0h0v0T0w1f1d1c0h0v0T2w1d1v2b0000d3g0018i4x8310c44x80000i4N8klBsi4N8oCFyqCN8j4xMh4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4h4gp23WFzO6wd0q0Ogq0Q1E3wMQ1E30xF3g6wdoqgQ1E3g6wdoq0Q1E3G3g6wdoqgQ1E3m40FBO2w2oYic4CLQhXga0r4x8Xh7I0E1Ill9EZ9DTjnUA50e8FHUHyX86CNZFF-S-q3g6Ed0qgQ1F3g7i6wd8q0QxE3q6wfGgl0OWqKHWSCGC70a26of91ggP1YA513a7B0G1i2E6kfPoa0k0VPCu9FGYhPCjAVejPDdcPWpuHL00Fy0k3J8QQ3F8w0
 
@@ -23,6 +23,8 @@ const Enviroment = undefined;
 //Summomner - https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e0ft2Qm0a7g0fj07i0r1O_U00000000o2320T0v0pL0OaD0Ou00q1d100f6y1z6C0w5c0h0X1T0v0hL0OaD0Ou00q0d100f6y1z8C0w2c0h8X0T0v0pL0OaD0Ou00q0d100f8y0z1C2w5c0Gc0h0X1T2v0fL0OaD0Ou02q0d100f8y0z1C2w0Gc0h0b4N8j4xci4N8i4x8i4x8i4w00000j4xci000h4h4h4h4p22JFB-AChV2D2kAODj5NixgwGJb41uQSJiJiSoKlEkaOpExcnNfqlGRbyoKmEkaReHBNglsLi_bM2nMhvEBYynwkO_3Aqp7wieCCkWgK9M5eziAsIbSKRERGeM5OB2xkjd482QO_j8QOfk8WGpjF2VmJhHkqmk51j8M0pt0OWFBQ3b00
 
 //Level 1 - https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2Qm0afg0fj07i0r1Oaa48kk1uU00000000o3220T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT0v0pL0OaD0Ou00q1d100f7y1z8C1wbc0h0X0T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p23fFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00JIU_4cC2orjfz_8SPeSPzZuZXQrpYvWZXPjIIU_nJdNDN_AXTjMA00
+
+//Cool - https://jummbus.bitbucket.io/#j4N07Unnamedn301s1k0l00e0ft2mm0a7g0fj07i0r1Oaa10kk18U00000000o3220T0v0kL0OaD0Ou00q0d100f1y0z1C2w2c0Gc0h0X1T0v0uL0OaD0Ou00q1d500f6y1z6C0wbc0h8X0T0v0zL0OaD0Ou00q1d500f7y1z6C1w5c0h0X0T8v0pL0OaD0Oue6q3d700f8y6z5C0b4x8i4x8i4x8i4x8ld3hDpM004x8i4w004hcy8y8y8ygp245FAugxaAB1OdaFlERqtmBlFWJmFjGRqliHhGQWJaHi0IILO08hNZ8aFN-BCFNZaB3zZatjwQOfgOla6nBOeiViZPwYLAXT8YInMc3OKc77QHT8YKnRW_aSNCqN7mEQYHz6mGAt4zEYFD6kG4tyzoOScpqGhQqRBj541o6zh5H2M8I2kR1q0Jizh5EyQNp8Nt8mDhEyRhqwJkFG2Q1qB6ybh5wGl8FE2w00f_Z0kZ71lg506Z70s050kZ70s0506Z71k000
 
 {
     let canvas = document.createElement("canvas"),
@@ -335,6 +337,60 @@ const Enviroment = undefined;
         Explode: new Sound("Explode.wav", .2),
         BotSummon: new Sound("BotSummon.wav", .7)
     }
+}
+{
+    var ws;
+    var wsSetup = function wsSetup(link) {
+        try{
+        ws = new WebSocket("ws://"+link);
+        }catch(err) {
+            try{
+                ws = new WebSocket("wss://"+link);
+            }catch(err) {
+                return;
+            };
+        };
+        ws.open = new Promise(r=>ws.onopen = () => {
+            r();
+            console.log("Connected");
+            sendUpdate();
+        });
+        ws.onclose = err => {
+            console.error("err: "+err);
+            online.clear();
+            Host = 0;
+        }
+        ws.onmessage = (ev) => onData(JSON.parse(ev.data));
+    }
+    var online = new Map;
+    function onData(data) {
+        var {id} = data;
+        if(data.host) Host = data.host;
+
+        if(!("id" in data)) return;
+        if(data.input) {
+            online.set(id, data.input);
+            multi = getExtras();
+            if(multi >= maxPlayers) {
+                multi = maxPlayers-1;
+            }
+        }
+        if(data.close) {
+            online.delete(id);
+            multi = getExtras();
+            if(multi >= maxPlayers) {
+                multi = maxPlayers-1;
+            }
+        }
+        //sendUpdate();
+    }
+    var sendData = async function sendData(obj) {
+        await ws.open;
+        ws.send(JSON.stringify(obj));
+    }
+}
+function getExtras() {
+    return gamepads.length + online.size;
 }
 
 var volumeLevel = 10;
@@ -1114,14 +1170,16 @@ function Point(x, y) {
 }
 class Enemy extends Entity{
     hit(what) {
-        if(this.hits & what.team && ((this.team & TEAM.GOOD) || !this.dead)) {
+        if(this.hits & what.team && ((this.team & TEAM.BULLET) || !this.dead)) {
             what.attacked({enemy: this, atk: this.atk});
         }
     }
     attacked(obj) {
         super.attacked(obj);
         for(let main of mains) {
-            main.onXp();
+            if(main.team & obj.enemy.team) {
+                main.onXp();
+            }
         }
     }
     explode() {}
@@ -1153,7 +1211,7 @@ class Enemy extends Entity{
         }
     }
     spawn() {
-        var d = 10;
+        var d = 10 + multi * 5;
         var I = this;
         do{
             this.x = random(game.w - this.s);
@@ -1548,10 +1606,14 @@ class SpawnDust extends Xp{
 }
 class Spawner extends Point{
     constructor(boss, add=true) {
-        super(boss.x + boss.s/2, boss.y - boss.s/2);
+        super(boss.x, boss.y);
         this.team = boss.team;
         this.boss = boss;
         this.add = add;
+        var mult = multi + 1;
+        boss.hp *= mult;
+        boss.hp2 *= mult;
+        boss.xHp *= mult;
     }
     s = 0;
     coll = 0;
@@ -3521,14 +3583,14 @@ class TheDasher extends Player{
                 // }
             }
         }else if(this.god && what.team & TEAM.BULLET) {
-            what.team = this.team;
-            what.hits = this.hits;
-            what.coll = this.coll;
-            what.color = this.color;
-            what.color2 = this.color2;
-            what.color3 = this.color3;
-            what.atk = 0.5;
-            what.teamColor = this.teamColor;
+            // what.team = this.team;
+            // what.hits = this.hits;
+            // what.coll = this.coll;
+            // what.color = this.color;
+            // what.color2 = this.color2;
+            // what.color3 = this.color3;
+            // what.atk = 0.5;
+            // what.teamColor = this.teamColor;
         }else if(what.hp <= 0 && this.god) {
             what.team = this.team;
             what.important = true;
@@ -3782,6 +3844,8 @@ class SummonerClass extends Player{
     draw() {
         super.draw();
         for(let pet of this.pets) {
+            pet.teamColor = 0;
+            pet.hp = pet.xHp/10;
             pet.draw();
         }
     }
@@ -3860,15 +3924,16 @@ class Tracker extends Chill{
         if(!obj2.x) obj2 = enemy;
         this.move(Entity.radian(obj2, obj), mult);
     }
-    atk = 1.5;
-    nohit = TEAM.BULLET;
+    atk = 0.5;
     spd = 0.1;
-    friction = 0.99;
+    friction = 0.95;
+    coll = TEAM.BULLET;
     color = "#0f0";
     shape = shapes.get("square.4");
     color2 = "#ff0";
     shape2 = shapes.get("square-ring");
-    hp = 1;
+    xHp = .1;
+    hp = .1;
     xp = 0;
     m = 10;
 }
@@ -3984,7 +4049,7 @@ class TheMagician extends SummonerClass{
     color = "#5f5";
     color2 = "#cfc";
     rec = 0.2;
-    maxSum = 5;
+    maxSum = 10;
     shape2 = shapes.get("tophat");
     constructor(id) {
         super(id);
@@ -4050,9 +4115,10 @@ class TheMagician extends SummonerClass{
             this.alive.push(blob);
             blob.inv.set(this, 10);
             var a = (blob.spd * 10);
+            blob.teamColor = this.teamColor;
             blob.vx = cos(rad) * a;
             blob.vy = sin(rad) * a;
-            blob.hp = 1;
+            blob.hp = blob.xHp;
             this.p -= 5;
             this.lastShot = 5;
             sounds.Magic.play();
@@ -4063,7 +4129,8 @@ class TheMagician extends SummonerClass{
             this.alive.push(pet);
             enemies.push(pet);
             this.p -= 5;
-            pet.hp = 1;
+            pet.hp = pet.xHp;
+            pet.teamColor = this.teamColor;
         }
         if(this.pets.length == 1) sounds.Magic.play();
         else if(this.pets.length) sounds.BigMagic.play();
@@ -4234,11 +4301,12 @@ class TheLucky extends TheGunner{
             var blob = new Bullet(this, rad);
             blob.time = 10;
             blob.atk = .2;
-            // blob.m = 1;
+            blob.m = 0.03;
             blob.hp = 0.1;
-            blob.team = TEAM.BULLET + TEAM.ALLY;
-            blob.coll = TEAM.BULLET;
-            blob.nocoll = TEAM.ALLY;
+            blob.team = TEAM.BULLET | this.team;
+            blob.coll = 0;
+            // blob.hits = blob.hits | TEAM.BULLET;
+            blob.nocoll = this.team;
             enemies.push(blob);
             sounds.MachineGun.play();
             // this.lastShot = 1;
@@ -5022,7 +5090,7 @@ var Arena;
             ++multi;
             mainMenu.load();
         }
-        if(multi > gamepads.length) {
+        if(multi > getExtras()) {
             multi = 0;
             mainMenu.load();
         }
@@ -5201,6 +5269,7 @@ function restart() {
             main.xHp = 5;
             main.hp  = 5;
             bosses.add(main);
+            main.nextLevel();
         }
     }
     background.recolor();
@@ -5212,6 +5281,8 @@ onresize = () => {
 
     var mult = multi + 1;
     mult **= .75;
+
+    if(Arena) mult = 1;
 
     scale = round(sf * (game.width * game.height/mult) ** .5);
 
@@ -5291,6 +5362,7 @@ function levelName(level) {
     }
     return txt;
 }
+var drawBackground;
 {
     let leaveButton = new Button;
     let restartButton = new Button;
@@ -5306,8 +5378,13 @@ function levelName(level) {
             // ctx.fillStyle = "#000";
             // // ctx.shadowBlur = 0;
             // ctx.fillRect(0, 0, game.width, game.height);
-            ctx.drawImage(background.canvas, 0, 0);
-            ctx.drawImage(background.overlay, 0, 0);
+            if(drawBackground) {
+                ctx.drawImage(background.canvas, 0, 0);
+                ctx.drawImage(background.overlay, 0, 0);
+            }else{
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
             var i = 0;
             if(Arena) {
                 var len = bosses.size;
@@ -5424,8 +5501,8 @@ function levelName(level) {
             ctx.fillStyle = "#ff0";
             ctx.fillText(txt, game.width - ctx.measureText(txt).width, scale * 2);
 
+            var boss = level % 5 == 0;
             if(Survival) {
-                var boss = level % 5 == 0;
                 var alltime = (boss? 1000: 500);
                 var timeLeft = alltime - TIME;
 
@@ -5474,6 +5551,10 @@ function levelName(level) {
                 restart();
             }
 
+            if(keys.use("Tab")) {
+                drawBackground = !drawBackground;
+            }
+
             // if(keys.use("Enter")) console.log(enemies);
             if(keys.use("Minus")) {
                 --volumeLevel;
@@ -5484,6 +5565,10 @@ function levelName(level) {
                 ++volumeLevel;
                 if(volumeLevel > 10) volumeLevel = 10;
                 sounds.editVolume(volumeLevel * .1);
+            }
+
+            if(keys.use("Tab")) {
+                console.log(enemies);
             }
 
             var arr = enemies.filter(blob => {
@@ -5499,15 +5584,17 @@ function levelName(level) {
                 if(!Survival) {
                     // enemies = [main];
                     for(let main of mains) {
-                        if(typeof main.nextLevel == "function") main.nextLevel();
-                        else console.log(main);
+                        main.nextLevel();
+                        main.revive();
                     }
                 }
                 // if(!Survival) {
                 //     main.spawn();
                 // }
+                let boss = level % 5 == 4;
                 for(let n = 0; n <= multi; n++) {
                     nextLevel();
+                    if(boss) break;
                     if(n < multi) --level;
                 }
             }
