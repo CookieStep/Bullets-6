@@ -51,6 +51,7 @@ const Enviroment = undefined;
             // this.colors = [...colors];
         },
         shadow() {
+            return;
             var s = scale * 1.5;
             var width = floor(innerWidth/s);
             var height = floor(innerHeight/s);
@@ -465,6 +466,7 @@ var DEAD = 10;
     var shapes = new Map;
     shapes.set("circle", new Path(ctx => ctx.arc(.5, .5, .5, 0, PI2)));
     shapes.set("square", new Path(ctx => ctx.rect(0, 0, 1, 1)))
+    shapes.set("shotgun", new Path(ctx => ctx.rect(.25, .3, 1.2, .4)));
     shapes.set("square.4", new Path(ctx => {
         var r = .4;
         ctx.moveTo(r, 0);
@@ -1559,6 +1561,7 @@ class Pounder extends Enemy{
     }
     color = "#ff0";
     shape = shapes.get("trapoid");
+    nocoll = TEAM.BAD;
 }
 class Wander extends Walker{
     ro = PI/2;
@@ -1834,22 +1837,26 @@ class Mafia extends Enemy{
 class MafiaTurret extends Turret{
     draw() {
         var {ox, oy, x, y, alpha} = this;
-        this.drawWith({x: ox, y: oy, alpha: alpha * .2});
-        this.drawWith({x: (ox + x) * .5, y: (oy + y) * .5, alpha: alpha * .5});
+        // this.drawWith({x: ox, y: oy, alpha: alpha * .2});
+        // this.drawWith({x: (ox + x) * .5, y: (oy + y) * .5, alpha: alpha * .5});
         this.drawWith({alpha});
     }
     draw1() {
-        var {x, y, s, r, alpha, shape} = this;
-        if(!shape) return;
+        var {x, y, s, r, ro, alpha} = this;
         x *= scale;
         y *= scale;
         s *= scale;
 
+        if(!r) r = 0;
+        if(!ro) ro = 0;
+
+        r += ro - PI/2;
+
         ctx.save();
-        ctx.zoom(x, y, s, s);
+        ctx.zoom(x, y, s, s, r);
         ctx.globalAlpha = alpha;
         ctx.fillStyle = this.color;
-        ctx.fill(shape);
+        ctx.fill(this.shape);
         ctx.resetTransform();
         ctx.restore();
     }
@@ -1863,7 +1870,7 @@ class MafiaTurret extends Turret{
         ctx.save();
         ctx.zoom(x, y, s, s);
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = this.color2 || this.color;
+        ctx.fillStyle = this.color2;
         ctx.fill(shape2);
         ctx.resetTransform();
         ctx.restore();
@@ -1878,11 +1885,28 @@ class MafiaTurret extends Turret{
         ctx.save();
         ctx.zoom(x, y, s, s);
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = this.color3 || this.color2 || this.color;
+        ctx.fillStyle = this.color3;
         ctx.fill(shape3);
         ctx.resetTransform();
         ctx.restore();
     }
+    // draw3() {
+    //     var {x, y, s, r, ro, alpha} = this;
+    //     x *= scale;
+    //     y *= scale;
+    //     s *= scale;
+
+    //     if(!r) r = 0;
+    //     if(!ro) ro = 0;
+
+    //     ctx.save();
+    //     ctx.zoom(x, y, s, s, r);
+    //     ctx.globalAlpha = alpha;
+    //     ctx.fillStyle = this.color;
+    //     ctx.fill(this.shape);
+    //     ctx.resetTransform();
+    //     ctx.restore();
+    // }
     xp = 7;
     range = 10;
     constructor() {
@@ -1906,12 +1930,12 @@ class MafiaTurret extends Turret{
             sounds.Shotgun.play();
         }
     }
-    shape = shapes.get("square.4");
-    shape2 = shapes.get("shades");
-    // shape3 = shapes.get("suit");
-    color = "#777";
-    color2 = "#444";
-    color3 = "#ccc";
+    shape2 = shapes.get("square.4");
+    shape3 = shapes.get("shades");
+    shape = shapes.get("shotgun");
+    color2 = "#777";
+    color3 = "#444";
+    color = "#444";
 }
 class MafiaInvasion extends Mafia{
     constructor() {
@@ -1949,7 +1973,8 @@ class MafiaInvasion extends Mafia{
     screenlock() {}
     xp = 10;
     time = 0;
-    team = TEAM.BAD;
+    // team = TEAM.BAD;
+    team = 0;
     hits = 0;
     coll = 0;
     s = 0;
@@ -2160,6 +2185,7 @@ class Runner extends Mover{
         super();
         this.spd *= 1.3;
     }
+    nocoll = TEAM.BAD;
     color = "#055";
     color2 = "#7f7";
     shape2 = shapes.get("dual-arrow");
@@ -2628,9 +2654,9 @@ class Summoner extends Brain{
         switch(this.phase) {
             case 0:
                 if(this.time < 100 && this.time % 10 == 0) {
-                    var rad = random(PI2);
+                    var rad = Entity.radian(player, this) + (Math.random() * 2 - 1) * PI/2;
                     var blob = new Mover();
-                    Bullet.position(blob, rad - PI/8, this);
+                    Bullet.position(blob, rad, this);
                     blob.color = this.color;
                     blob.color2 = this.color2;
                     blob.coll = 0;
@@ -4100,8 +4126,10 @@ class TheMagician extends SummonerClass{
         super.nextLevel();
         this.p = 0;
     }
-    move(rad, mult) {
-        super.move(rad, mult);
+    move(rad, mult=1) {
+        var dis = this.spd * mult;
+        this.vx += cos(rad) * dis;
+        this.vy += sin(rad) * dis;
     }
     tickSkill() {
         this.rec = this.mrad === false? 0.25: 0.15;
@@ -4111,6 +4139,7 @@ class TheMagician extends SummonerClass{
             var blob = this.summon();
             blob.xp = 0; blob.s = .5;
             Bullet.position(blob, rad, this);
+            this.move(rad, -5);
             enemies.push(blob);
             this.alive.push(blob);
             blob.inv.set(this, 10);
@@ -5272,10 +5301,13 @@ function restart() {
             main.nextLevel();
         }
     }
-    background.recolor();
-    background.draw();
+    // background.recolor();
+    // background.draw();
 }
-onresize = () => {
+var needsResize;
+onresize = () => needsResize = 1;
+function doResize() {
+    needsResize = 0;
     game.width = innerWidth;
     game.height = innerHeight;
 
@@ -5297,9 +5329,9 @@ onresize = () => {
     background.overlay.width = game.width;
     background.overlay.height = game.height;
 
-    if(enemies && enemies.length) {
-        background.draw();
-    }
+    // if(enemies && enemies.length) {
+    //     background.draw();
+    // }
 };
 var keys = new (class Keys extends Map {
     use(code) {
@@ -5371,6 +5403,7 @@ var drawBackground;
         while(true) {
             await frame();
             try{
+            if(needsResize) doResize();
             if(mainMenu.active) {
                 mainMenu();
                 continue;
@@ -5579,7 +5612,7 @@ var drawBackground;
                 timeLeft = 0;
             }
             
-            if(!Arena && !allDead && (Survival? timeLeft <= 0: arr.length == 0)) {
+            if(!Arena && !allDead && (Survival? timeLeft <= 0: (arr.length == 0 && bosses.size == 0))) {
                 TIME = 0;
                 if(!Survival) {
                     // enemies = [main];
@@ -5894,10 +5927,10 @@ function nextLevel() {
             --level;
         break;
     }
-    if(level != olevel) {
-        background.recolor();
-        background.draw();
-    }
+    // if(level != olevel) {
+    //     background.recolor();
+    //     background.draw();
+    // }
 }
 {
     function hide(num, reverse) {
