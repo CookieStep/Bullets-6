@@ -251,10 +251,28 @@ const Enviroment = undefined;
     ontouchmove = e => [...e.changedTouches].forEach(touchmove);
     ontouchend = e => [...e.changedTouches].forEach(touchend);
     ontouchcancel = (e) => [...e.changedTouches].forEach(touchcancel);
-    onmousedown = e => !mobile && touchstart(e);
-    onmousemove = e => !mobile && touches.has(undefined) && touchmove(e);
-    onmouseup = e => !mobile && touchend(e);
+    // onmousedown = e => !mobile && touchstart(e);
+    // onmousemove = e => !mobile && touches.has(undefined) && touchmove(e);
+    // onmouseup = e => !mobile && touchend(e);
 }
+/**@param {MouseEvent} e */
+function mouseMove(e) {
+	mouse.x = e.pageX/scale;
+	mouse.y = e.pageY/scale;
+	mouse.u = 1;
+}
+var mouse = {x: 0, y: 0, u: 0};
+var mouseKey = ["MouseLeft", "MouseMiddle", "MouseRight"];
+onmousemove = mouseMove;
+onmousedown = e => {
+	mouseMove(e);
+	onkeydown({code: mouseKey[e.button]});
+};
+onmouseup = e => {
+	mouseMove(e);
+	onkeyup({code: mouseKey[e.button]});
+};
+oncontextmenu = e => e.preventDefault();
 {
     var showButtons;
     var Button = class Button{
@@ -3368,6 +3386,11 @@ class Player extends Entity{
     }
     xp = 0;
     r = 0;
+    toMouse() {
+		var {x: mx, y: my} = mouse;
+		var s = this.s/2;
+		return {x: mx - (this.x + s), y: my - (this.y + s)};
+	}
     tick() {
         this.mrad = false;
         var mx = 0;
@@ -3390,6 +3413,11 @@ class Player extends Entity{
             if(keys.has("ArrowDown" )) ++my;
             if(keys.has("ArrowLeft" )) --mx;
             if(keys.has("ArrowRight")) ++mx;
+            
+            if(keys.has("MouseLeft")) {
+                ({x: mx, y: my} = this.toMouse());
+            }
+
             if(mx || my) {
                 var rad = atan(my, mx);
                 // this.r = rad;
@@ -3405,6 +3433,9 @@ class Player extends Entity{
             }else if(keys.has("Space")) {
                 this.ability(keys.get("Space"), mrad, srad);
                 keys.set("Space", 2);
+            }else if(keys.has("MouseRight")) {
+                this.ability(keys.get("MouseRight"), mrad, srad);
+                keys.set("MouseRight", 2);
             }
             this.touchv2();
         }
@@ -5580,12 +5611,12 @@ var drawBackground;
             if(keys.use("Backspace") || buttonClick(leaveButton) || B_button) {
                 mainMenu.load();
                 Survival = false;
-            }else if((allDead && (buttonClick(restartButton) || keys.use("Enter") || A_button || X_button)) || Y_button) {
+            }else if((allDead && (buttonClick(restartButton) || keys.use("Enter") || keys.use("MouseLeft") || A_button || X_button)) || Y_button) {
                 restart();
             }
 
             if(keys.use("Tab")) {
-                drawBackground = !drawBackground;
+                // drawBackground = !drawBackground;
             }
 
             // if(keys.use("Enter")) console.log(enemies);
