@@ -1,6 +1,8 @@
 var canvas = document.createElement("canvas"),
     ctx = canvas.getContext("2d");
 
+var invertedControls = 0;
+    
 //BLUE
 //https://jummbus.bitbucket.io/#j4N07Unnamedn310s1k0l00e03t2mm0afg0fj07i0r1O_U00000000o3210T0v0pL0OaD0Ou00q0d100f8y0z8C0w1c0h6X1T5v0pL0OaD0Ou21q1d500f6y1z8C0c0h8H_SJ5SJFAAAkAAAT5v0pL0OaD0Ou51q1d500f7y1z6C1c0h0H-IHyiih9999998T4v0pL0OaD0Ouf0q1z6666ji8k8k3jSBKSJJAArriiiiii07JCABrzrrrrrrr00YrkqHrsrrrrjr005zrAqzrjzrrqr1jRjrqGGrrzsrsA099ijrABJJJIAzrrtirqrqjqixzsrAjrqjiqaqqysttAJqjikikrizrHtBJJAzArzrIsRCITKSS099ijrAJS____Qg99habbCAYrDzh00b4Acigw00000h4g000000014h000000004h400000000p22sFB-8p6CCbAAOfi5jcLiF9yW2p7F2XaBIdAbgGQZCnZAbJ4O_kG9yWCO5VBiVxIxtBiS6O5FQquPb-Q5SDdaDddByipjFQKFZgVzPfCtbCvcdzPizPkFWAnYybEeNGRuEQuEsl5UBiAuoZjUJhSNjN4L00000
 
@@ -724,13 +726,13 @@ class Entity{
         this.oy = this.y;
     }
     explode() {
-        var a = this.xp;
-        var o = random(PI);
-        for(let i = 0; i < a; i++) {
-            var blob = new Xp;
-            Xp.position(blob, i * PI2/a + o, this);
-            exp.push(blob);
-        }
+        // var a = this.xp;
+        // var o = random(PI);
+        // for(let i = 0; i < a; i++) {
+        //     var blob = new Xp;
+        //     Xp.position(blob, i * PI2/a + o, this);
+        //     exp.push(blob);
+        // }
     }
     dead = 0;
     movement() {
@@ -1098,14 +1100,8 @@ class Entity{
 class Xp extends Entity{
     static position(what, rad, parent) {
         if(!parent) parent = what.parent;
-        // var s = what.s * .5;
         var ps = parent.s;
         what.r = rad;
-        // var c = cos(rad), s = sin(rad);
-
-        // var h = Math.min(abs(1 / c), abs(1 / s));
-
-        // c *= h; s *= h;
 
         what.x = parent.x + ps/2 - what.s/2;
         what.y = parent.y + ps/2 - what.s/2;
@@ -1124,7 +1120,7 @@ class Xp extends Entity{
         this.vx = cos(rad) * dis;
         this.vy = sin(rad) * dis;
     }
-    explode() {};
+    explode() {}
     spd = 0.05;
     tick() {
         if(++this.life < 7) {
@@ -1169,10 +1165,7 @@ class Xp extends Entity{
         if(!x) return;
         if(!ox) return;
         if(!oy) return;
-        // var color = ctx.createLinearGradient(x, y, ox, oy);
-        // this.color = this.color2 || `hsl(${this.hue}, ${this.sat}%, ${this.bri}%)`;
-        // color.addColorStop(0, this.color);
-        // color.addColorStop(1, this.color3 || `hsla(${this.hue - 10}, ${this.sat}%, ${this.bri}%, .2)`);
+        
         ctx.strokeStyle = this.color = `hsl(${this.hue}, ${this.sat}%, ${this.bri}%)`;
         ctx.stroke();
         ctx.globalAlpha = 1;
@@ -1183,12 +1176,35 @@ class Xp extends Entity{
     color = "#f00";
     shape = shapes.get("square.4");
 }
+class ScoreText extends Xp{
+    constructor(parent, score) {
+        super();
+        SpawnDust.position(this, 0, 0, parent);
+        this.score = score;
+        this.s *= parent.s;
+    }
+    draw() {
+        var {x, y} = this;
+        x *= scale; y *= scale;
+        ctx.font = `${this.s*scale}px Arial`;
+        ctx.fillStyle = 'yellow';
+        ctx.fillText(this.score, x, y);
+    }
+    tick() {
+        this.y -= this.spd;
+        ++this.time;
+        if(this.time > 20) this.dead = DEAD;
+    }
+    time = 0;
+    s = 0.5;
+}
 function Point(x, y) {
     this.x = x;
     this.y = y;
     this.s = 0;
 }
 class Enemy extends Entity{
+    points = 0;
     hit(what) {
         if(this.hits & what.team && ((this.team & TEAM.BULLET) || !this.dead)) {
             what.attacked({enemy: this, atk: this.atk});
@@ -1202,7 +1218,13 @@ class Enemy extends Entity{
             }
         }
     }
-    explode() {}
+    explode() {
+        if(this.points) {
+            if(expert) this.points *= 2;
+            score += this.points;
+            enemies.push(new ScoreText(this, this.points));
+        }
+    }
     getMain() {
         let arr = [];
         let ali = [];
@@ -1232,6 +1254,8 @@ class Enemy extends Entity{
     }
     spawn() {
         var d = 10 + multi * 5;
+        if(this.far) d += 5;
+        if(this.near) d -= 5;
         var I = this;
         do{
             this.x = random(game.w - this.s);
@@ -1379,6 +1403,7 @@ class Brain extends Enemy{
     shape = shapes.get("square.4");
 }
 class Mover extends Enemy{
+    points = 200;
     color = "#fa5";
     shape = shapes.get("square.4");
     shape2 = shapes.get("arrow");
@@ -1410,6 +1435,7 @@ class Mover extends Enemy{
     xp = 7;
 }
 class Walker extends Mover{
+    points = 100;
     color = "#ffa";
     shape = shapes.get("square.4");
     color2 = "#aa0";
@@ -1518,6 +1544,8 @@ class Chaser extends Brain{
     }
 }
 class Chill extends Enemy{
+    points = 100;
+    near = true;
     constructor() {
         super();
         if(expert) {
@@ -1547,7 +1575,7 @@ class Chill extends Enemy{
     shape2 = shapes.get("pause");
     hp = 1;
     xp = 3;
-    sd = 10;
+    sd = 15;
 }
 class Pounder extends Enemy{
     constructor() {
@@ -1555,8 +1583,9 @@ class Pounder extends Enemy{
         this.a = round(random());
         this.b = round(random());
         this.time = 0;
-        this.mov = expert? 0.25: 0.15;
+        this.mov = expert? 0.3: 0.18;
     }
+    points = 400;
     tick() {
         if(this.time) {
             --this.time;
@@ -1700,7 +1729,7 @@ class Turret extends Chill{
     constructor() {
         super();
         this.r = random(PI2);
-        this.range = expert? 15: 10;
+        this.range = expert? 15: 12;
     }
     // register(what) {
     //     if(!(this.hits & what.team) || what.team & TEAM.BULLET) return;
@@ -1736,6 +1765,7 @@ class Turret extends Chill{
             }
         }
     }
+    points = 300;
     mo = PI/32;
     xp = 7;
     lastShot = 0;
@@ -1757,6 +1787,7 @@ class Turret extends Chill{
     shape2 = shapes.get("bullet");
 }
 class Bomb extends Chill{
+    points = 150;
     color = "#333";
     shape2 = shapes.get("square.5");
     color2 = "#d55";
@@ -1908,23 +1939,7 @@ class MafiaTurret extends Turret{
         ctx.resetTransform();
         ctx.restore();
     }
-    // draw3() {
-    //     var {x, y, s, r, ro, alpha} = this;
-    //     x *= scale;
-    //     y *= scale;
-    //     s *= scale;
-
-    //     if(!r) r = 0;
-    //     if(!ro) ro = 0;
-
-    //     ctx.save();
-    //     ctx.zoom(x, y, s, s, r);
-    //     ctx.globalAlpha = alpha;
-    //     ctx.fillStyle = this.color;
-    //     ctx.fill(this.shape);
-    //     ctx.resetTransform();
-    //     ctx.restore();
-    // }
+    points = 500;
     xp = 7;
     range = 10;
     constructor() {
@@ -1958,11 +1973,11 @@ class MafiaTurret extends Turret{
 class MafiaInvasion extends Mafia{
     constructor() {
         super();
-        if(!expert) {
-            this.hp = 20;
-            this.xHp = 20;
-            this.hp2 = 20;
-        }
+        this.spawns = new Map([
+            [MafiaCharger, 10],
+            [MafiaGunner, 10],
+            [MafiaTurret, 10]
+        ]);
         this.spawn();
     }
     spawn() {
@@ -1976,11 +1991,22 @@ class MafiaInvasion extends Mafia{
         var n = this.hp;
         if(n > 10) n = 10;
         if(this.time++ % 50 == 0 && this.all.length < n) for(let i = min(3, this.hp2, n - this.all.length); i > 0; i--) {
-            var blob = new (randomOf([MafiaTurret, MafiaGunner, MafiaCharger]));
+            var summon = randomOf([...this.spawns.keys()]);
+            var blob = new summon;
             blob.spawn();
             this.all.push(blob);
             enemies.push(blob);
             --this.hp2;
+
+            
+            var c = this.spawns.get(summon);
+            c -= 1;
+            if(c > 0) {
+                this.spawns.set(summon, c);
+            }else{
+                this.spawns.delete(summon);
+            }
+            console.log(this.spawns);
         }
         this.all = this.all.filter(blob => {
             var keep = !blob.dead;
@@ -2020,6 +2046,8 @@ class MafiaGunner extends Mafia{
             this.shoot(rad);
         }
     }
+    far = true;
+    points = 600;
     shape3 = shapes.get("tophat");
     lastShot = 0;
     shoot(rad) {
@@ -2084,11 +2112,15 @@ class MafiaCharger extends Mafia{
             }
         }
     }
+    far = true;
+    points = 700;
     m = 5;
     spd = 0.5;
     friction = 0.99;
 }
 class Spinner extends Chill{
+    points = 400;
+    near = false;
     tick() {
         super.tick();
         this.rot += PI/32;
@@ -2114,7 +2146,7 @@ class Spinner extends Chill{
 class Lost extends Brain{
     register(enemy) {
         if(!expert) return;
-        if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team)) {
+        if(!(enemy.team & TEAM.BULLET) && (this.hits & enemy.team))  {
             var dis = Entity.distance(this, enemy);
             var d = 10;
             if(dis < d) {
@@ -2138,6 +2170,7 @@ class Lost extends Brain{
         super.tick();
         this.r = atan(this.vy, this.vx);
     }
+    points = 300;
     color = "#f5a";
     shape = shapes.get("spikebox");
 }
@@ -2189,6 +2222,7 @@ class Slime extends Enemy{
                 Xp.position(blob, i, this);
                 blob.vx = cos(i) * .2;
                 blob.vy = sin(i) * .2;
+                blob.points = 100;
                 blob.version = 2;
                 enemies.push(blob);
             }
@@ -2203,6 +2237,8 @@ class Runner extends Mover{
         super();
         this.spd *= 1.3;
     }
+    far = true;
+    points = 400;
     nocoll = TEAM.BAD;
     color = "#055";
     color2 = "#7f7";
@@ -2213,6 +2249,7 @@ class Dasher extends Mover{
     static type = "Miniboss";
     team = TEAM.BOSS + TEAM.BAD;
     hits = TEAM.GOOD + TEAM.BULLET;
+    points = 3000;
     coll = 0;
     s = 1.5;
     m = 1;
@@ -2229,7 +2266,7 @@ class Dasher extends Mover{
         var m = this.hp/this.xHp;
         switch(this.phase) {
             case 0:
-                this.spd = expert? .2: .075;
+                this.spd = expert? .2: .12;
                 this.moveTo(player);
                 this.r = atan(this.vy, this.vx);
                 // this.nocoll = this.hits;
@@ -2371,6 +2408,8 @@ class MiniDash extends Dasher{
             break;
         }
     }
+    far = 1;
+    points = 600;
     xHp = 1;
     hp  = 1;
     team = TEAM.BAD + TEAM.ENEMY;
@@ -2380,6 +2419,7 @@ class MiniDash extends Dasher{
     mini = true;
 }
 class Squish extends Enemy{
+    points = 15000;
     static name = "Squisher";
     static type = "Boss 2";
     color = "#f07";
@@ -2387,8 +2427,8 @@ class Squish extends Enemy{
     shape  = shapes.get("trapoid");
     shape2 = shapes.get("trapoid");
     ro = PI * .5;
-    xHp = 20;
-    hp = 20;
+    xHp = 30;
+    hp = 30;
     s = 2;
     phase = 0;
     ticks = 0;
@@ -2466,6 +2506,7 @@ class Squish extends Enemy{
                     let blob = new Turret();
                     var rad = a * p;
                     Bullet.position(blob, rad + PI/8, this);
+                    blob.points = 0;
                     blob.color = this.color;
                     blob.color2 = this.color2;
                     blob.coll = 0;
@@ -2485,6 +2526,7 @@ class Squish extends Enemy{
                     this.ticks = 0;
                     for(let rad = 0; rad < PI2; rad += p) {
                         var blob = new MafiaGunner();
+                        blob.points = 0;
                         Bullet.position(blob, rad + PI/8, this);
                         blob.r = 0;
                         blob.color = this.color;
@@ -2550,6 +2592,7 @@ class Squish extends Enemy{
                     this.ticks = 0;
                     for(let rad = 0; rad < PI2; rad += p) {
                         var blob = new Pounder();
+                        blob.points = 0;
                         Bullet.position(blob, rad + PI/8, this);
                         blob.r = 0;
                         blob.color = this.color;
@@ -2568,6 +2611,7 @@ class Squish extends Enemy{
     }
 }
 class Summoner extends Brain{
+    points = 5000;
     team = TEAM.BOSS + TEAM.BAD;
     hits = TEAM.GOOD;
     coll = 0;
@@ -2674,6 +2718,7 @@ class Summoner extends Brain{
                 if(this.time < 100 && this.time % 10 == 0) {
                     var rad = Entity.radian(player, this) + (Math.random() * 2 - 1) * PI/2;
                     var blob = new Mover();
+                    blob.points = 0;
                     Bullet.position(blob, rad, this);
                     blob.color = this.color;
                     blob.color2 = this.color2;
@@ -2697,6 +2742,7 @@ class Summoner extends Brain{
                 if(this.time < 100 && this.time % 10 == 0) {
                     var rad = Entity.radian(player, this);
                     var blob = new Mover();
+                    blob.points = 0;
                     Bullet.position(blob, rad, this);
                     blob.color = this.color;
                     blob.color2 = this.color2;
@@ -2727,6 +2773,7 @@ class Summoner extends Brain{
                     for(let i = 0; i < 8; i++) {
                         var rad = i * e;
                         var blob = new summon();
+                        blob.points = 0;
                         Bullet.position(blob, rad, this);
                         blob.color = this.color;
                         blob.color2 = this.color2;
@@ -2753,6 +2800,7 @@ class Summoner extends Brain{
                             else summon = Chill;
                         }
                         var blob = new summon();
+                        blob.points = 0;
                         blob.coll = 0;
                         blob.x = expert? .5: (a? .5: w);
                         blob.y = h * i + .5;
@@ -2769,6 +2817,7 @@ class Summoner extends Brain{
                             else summon = Mover;
                         }else continue;
                         var blob = new summon();
+                        blob.points = 0;
                         blob.coll = 0;
                         blob.x = w;
                         blob.y = h * i;
@@ -2957,6 +3006,8 @@ class Gobble extends Enemy{
         super();
         if(expert) this.spd *= 1.5;
     }
+    far = true;
+    points = 600;
     spd = .05;
     coll = TEAM.BULLET;
     tick() {
@@ -2990,6 +3041,7 @@ class Gobble extends Enemy{
 class BulletHell extends Enemy{
     static type = "MiniBoss";
     static name = "Spinner";
+    points = 12500;
     // attacked(obj) {
     //     super.attacked(obj);
     //     if(this.god) return;
@@ -3006,6 +3058,8 @@ class BulletHell extends Enemy{
         super();
         if(!expert) {
             this.spd *= .5;
+            this.hp = 20;
+            this.xHp = 20;
         }
         this.goal = new Point;
         this.goal.s = this.s * 2;
@@ -3134,6 +3188,7 @@ class BulletHell extends Enemy{
         for(let i = 0; i < 2; i++) {
             var rad = o + PI * i;
             var blob = new Mover(this);
+            blob.points = 0;
             Bullet.position(blob, rad, this);
             blob.team = TEAM.BULLET + TEAM.BAD + TEAM.GOOD;
             blob.nohit = TEAM.BAD;
@@ -3184,8 +3239,8 @@ class BulletHell extends Enemy{
     time = 0;
     coll = TEAM.BAD;
     nocoll = TEAM.BULLET;
-    hp = 15;
-    xHp = 15;
+    hp = 20;
+    xHp = 20;
 }
 var deadzone = 0.1;
 var dead = (num, dual) => {
@@ -3397,10 +3452,17 @@ class Player extends Entity{
         var my = 0;
         // var multi = mains[1];
         if(this.id == gamepads.length) {
-            if(keys.has("KeyW")) --my;
-            if(keys.has("KeyS")) ++my;
-            if(keys.has("KeyA")) --mx;
-            if(keys.has("KeyD")) ++mx;
+            if(invertedControls) {
+                if(keys.has("ArrowUp"   )) --my;
+                if(keys.has("ArrowDown" )) ++my;
+                if(keys.has("ArrowLeft" )) --mx;
+                if(keys.has("ArrowRight")) ++mx;
+            }else{
+                if(keys.has("KeyW")) --my;
+                if(keys.has("KeyS")) ++my;
+                if(keys.has("KeyA")) --mx;
+                if(keys.has("KeyD")) ++mx;
+            }
             if(mx || my) {
                 var rad = atan(my, mx);
                 // this.r = rad;
@@ -3409,10 +3471,17 @@ class Player extends Entity{
                 this.mrad = mrad;
             }
             mx = 0; my = 0;
-            if(keys.has("ArrowUp"   )) --my;
-            if(keys.has("ArrowDown" )) ++my;
-            if(keys.has("ArrowLeft" )) --mx;
-            if(keys.has("ArrowRight")) ++mx;
+            if(invertedControls) {
+                if(keys.has("KeyW")) --my;
+                if(keys.has("KeyS")) ++my;
+                if(keys.has("KeyA")) --mx;
+                if(keys.has("KeyD")) ++mx;
+            }else{
+                if(keys.has("ArrowUp"   )) --my;
+                if(keys.has("ArrowDown" )) ++my;
+                if(keys.has("ArrowLeft" )) --mx;
+                if(keys.has("ArrowRight")) ++mx;
+            }
             
             if(keys.has("MouseLeft")) {
                 ({x: mx, y: my} = this.toMouse());
@@ -3661,7 +3730,10 @@ class TheDasher extends Player{
             what.hit = this.hit;
             what.m = this.m;
             what.god = true;
-            
+            if(!what._explode) {
+                what._explode = what.explode;
+            }
+
             what.explode = () => {
                 // var a = what.xp;
                 // var o = random(PI);
@@ -3687,6 +3759,7 @@ class TheDasher extends Player{
                     blob.spd /= 4;
                     enemies.push(blob);
                 }
+                what._explode();
             }
             // var {vx, vy} = this;
             // for(let enemy of enemies) {
@@ -5639,11 +5712,16 @@ var drawBackground;
                 return (blob.team & TEAM.BAD);
             });
 
-            if(Survival && arr.length == 0 && (keys.use("Space") || A_button || X_button || buttonClick(restartButton))) {
+            var toNext = (arr.length == 0 && bosses.size == 0);
+            if(Survival && toNext && (keys.use("Space") || keys.use("Enter") || A_button || X_button || buttonClick(restartButton))) {
+                var ex = 1;
+                if(expert) ex = 2;
+                score += timeLeft * 5 * ex;
+                for(let main of mains) enemies.push(new ScoreText(main, timeLeft * 5 * ex));
                 timeLeft = 0;
             }
             
-            if(!Arena && !allDead && (Survival? timeLeft <= 0: (arr.length == 0 && bosses.size == 0))) {
+            if(!Arena && !allDead && (Survival? timeLeft <= 0: toNext)) {
                 TIME = 0;
                 if(!Survival) {
                     // enemies = [main];
